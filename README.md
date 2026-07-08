@@ -33,6 +33,8 @@ Runs in demo mode until you add a `.env` (see below).
    VITE_SUPABASE_URL=        (Project Settings → API → Project URL)
    VITE_SUPABASE_ANON_KEY=   (Project Settings → API → anon public key)
    SUPABASE_SERVICE_ROLE_KEY= (Project Settings → API → service_role key, Cloudflare secret only)
+   SCREENSHOTONE_ACCESS_KEY= (optional, captures screenshots on approval)
+   SLOP_SCREENSHOT_BUCKET=screenshots
    ```
 5. Sign up in the app once, then make yourself admin in the SQL editor:
    ```sql
@@ -60,7 +62,10 @@ signup via trigger.
    under Settings → Environment variables
 5. Add `SUPABASE_SERVICE_ROLE_KEY` as a Cloudflare Pages secret/environment
    variable too. It is used only by Pages Functions for API-key auth.
-6. Custom domain: Pages project → Custom domains → add `sloplocal.com`
+6. Optional screenshots: add `SCREENSHOTONE_ACCESS_KEY` as a secret and
+   `SLOP_SCREENSHOT_BUCKET=screenshots`. Approved submissions will upload a
+   fresh JPG to Supabase Storage before going live.
+7. Custom domain: Pages project → Custom domains → add `sloplocal.com`
 
 **Option B — direct upload:**
 ```bash
@@ -73,10 +78,6 @@ without it, refreshing on `/slop/whatever` would 404.
 
 ## What's stubbed for later
 
-- **Screenshot auto-capture** (Screenshotone) — needs a server-side call so the
-  API key isn't exposed. Cleanest path on Cloudflare: a tiny Pages Function
-  (`/functions/api/screenshot.ts`) called at approval time, writing the image
-  to Supabase Storage.
 - **Vote dedup beyond RLS** — the `unique (submission_id, user_id)` constraint
   + RLS already prevents double-voting per account; Edge Functions only needed
   if you want IP-level rate limiting.

@@ -297,8 +297,20 @@ export async function reviewSubmission(id: string, status: 'approved' | 'rejecte
     if (s) { s.status = status; s.reject_reason = rejectReason ?? null; }
     return;
   }
-  const { error } = await supabase!.from('submissions').update({ status, reject_reason: rejectReason ?? null }).eq('id', id);
-  if (error) throw error;
+  const { data: sessionData } = await supabase!.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error('Sign in again before reviewing submissions.');
+
+  const res = await fetch('/api/admin/review', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ id, status, reject_reason: rejectReason ?? null }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? 'Review failed.');
 }
 
 export async function banUser(userId: string, reason: string): Promise<void> {

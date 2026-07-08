@@ -7,6 +7,7 @@ export default function Admin() {
   const { user } = useAuth();
   const toast = useToast();
   const [pending, setPending] = useState<Slop[] | null>(null);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
 
   async function load() {
     setPending(await fetchPending());
@@ -25,9 +26,16 @@ export default function Admin() {
       reason = window.prompt('Reason for rejection (the builder will see this):') ?? undefined;
       if (reason === undefined) return; // cancelled
     }
-    await reviewSubmission(s.id, status, reason);
-    toast(status === 'approved' ? 'Artisanal slop approved. It\'s live.' : `${s.name} rejected.`);
-    load();
+    setReviewingId(s.id);
+    try {
+      await reviewSubmission(s.id, status, reason);
+      toast(status === 'approved' ? 'Artisanal slop approved. It\'s live.' : `${s.name} rejected.`);
+      load();
+    } catch (error: any) {
+      toast(error.message ?? 'Review failed.');
+    } finally {
+      setReviewingId(null);
+    }
   }
 
   async function handleBan(s: Slop) {
@@ -63,9 +71,11 @@ export default function Admin() {
           </div>
           <div className="admin-actions">
             <a className="btn" href={s.url} target="_blank" rel="noopener noreferrer">Open site →</a>
-            <button className="btn" onClick={() => review(s, 'approved')}>Approve</button>
-            <button className="btn btn-danger" onClick={() => review(s, 'rejected')}>Reject</button>
-            <button className="btn btn-danger" onClick={() => handleBan(s)}>Ban user</button>
+            <button className="btn" disabled={reviewingId === s.id} onClick={() => review(s, 'approved')}>
+              {reviewingId === s.id ? 'Reviewing…' : 'Approve'}
+            </button>
+            <button className="btn btn-danger" disabled={reviewingId === s.id} onClick={() => review(s, 'rejected')}>Reject</button>
+            <button className="btn btn-danger" disabled={reviewingId === s.id} onClick={() => handleBan(s)}>Ban user</button>
           </div>
         </div>
       ))}
