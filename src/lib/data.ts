@@ -155,6 +155,49 @@ export async function fetchProfile(username: string): Promise<Profile | null> {
   return data as Profile | null;
 }
 
+export async function updateProfile(input: {
+  id: string;
+  username: string;
+  display_name: string;
+  bio: string;
+}): Promise<{ ok: boolean; profile?: Profile; error?: string }> {
+  const username = sanitizeUsername(input.username);
+  if (!username) return { ok: false, error: 'Pick a public handle.' };
+  if (input.username.includes('@')) return { ok: false, error: 'Use a handle, not an email address.' };
+
+  if (DEMO_MODE) {
+    if (!demoUser || demoUser.id !== input.id) return { ok: false, error: 'Not signed in.' };
+    demoUser = { ...demoUser, username, display_name: input.display_name.trim() || null, bio: input.bio.trim() || null };
+    return { ok: true, profile: demoUser };
+  }
+
+  const { data, error } = await supabase!
+    .from('profiles')
+    .update({
+      username,
+      display_name: input.display_name.trim() || null,
+      bio: input.bio.trim() || null,
+    })
+    .eq('id', input.id)
+    .select('*')
+    .single();
+
+  if (error) {
+    if (error.code === '23505') return { ok: false, error: 'That handle is already taken.' };
+    return { ok: false, error: error.message };
+  }
+
+  return { ok: true, profile: data as Profile };
+}
+
+export async function usernameAvailable(username: string, currentUserId: string): Promise<boolean> {
+  const clean = sanitizeUsername(username);
+  if (!clean) return false;
+  if (DEMO_MODE) return true;
+  const { data } = await supabase!.from('profiles').select('id').eq('username', clean).maybeSingle();
+  return !data || data.id === currentUserId;
+}
+
 export async function fetchStats(): Promise<{ tools: number; votes: number; builders: number }> {
   const approved = await fetchApproved();
   return {

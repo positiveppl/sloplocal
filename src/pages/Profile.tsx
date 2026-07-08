@@ -13,6 +13,8 @@ import {
   fetchProfile,
   fmtVotes,
   revokeApiKey,
+  sanitizeUsername,
+  updateProfile,
 } from '../lib/data';
 
 export default function ProfilePage() {
@@ -26,6 +28,10 @@ export default function ProfilePage() {
   const [label, setLabel] = useState('My Claude agent');
   const [newKey, setNewKey] = useState('');
   const [keyBusy, setKeyBusy] = useState(false);
+  const [handleDraft, setHandleDraft] = useState('');
+  const [displayDraft, setDisplayDraft] = useState('');
+  const [bioDraft, setBioDraft] = useState('');
+  const [profileBusy, setProfileBusy] = useState(false);
 
   useEffect(() => {
     if (!username) return;
@@ -38,6 +44,13 @@ export default function ProfilePage() {
     if (user && username === user.username) fetchApiKeys(user.id).then(setApiKeys).catch(() => setApiKeys([]));
     else setApiKeys([]);
   }, [user, username]);
+
+  useEffect(() => {
+    if (!profile) return;
+    setHandleDraft(profile.username);
+    setDisplayDraft(profile.display_name ?? '');
+    setBioDraft(profile.bio ?? '');
+  }, [profile]);
 
   if (profile === undefined) return <div className="loading">Loading…</div>;
   if (profile === null) return <div className="empty">No builder by that handle.</div>;
@@ -67,6 +80,31 @@ export default function ProfilePage() {
     toast('API key revoked.');
   }
 
+  async function handleProfileSave() {
+    if (!user || !profile || profileBusy) return;
+    const cleanHandle = sanitizeUsername(handleDraft);
+    if (!cleanHandle) { toast('Pick a public handle.'); return; }
+    if (handleDraft.includes('@')) { toast('Use a handle, not an email address.'); return; }
+
+    setProfileBusy(true);
+    const result = await updateProfile({
+      id: user.id,
+      username: cleanHandle,
+      display_name: displayDraft,
+      bio: bioDraft,
+    });
+    setProfileBusy(false);
+
+    if (!result.ok || !result.profile) {
+      toast(result.error ?? 'Could not update profile.');
+      return;
+    }
+
+    setProfile(result.profile);
+    toast('Profile updated.');
+    if (result.profile.username !== username) navigate(`/profile/${result.profile.username}`, { replace: true });
+  }
+
   return (
     <div className="wrap">
       <div className="profile-head">
@@ -80,6 +118,33 @@ export default function ProfilePage() {
           <div className="stat-label">Slop score</div>
         </div>
       </div>
+
+      {isOwnProfile && (
+        <section className="profile-settings">
+          <div className="section-kicker">Profile Settings</div>
+          <h2>Public profile</h2>
+          <p>Your handle is public and appears on submissions. Keep email addresses out of it.</p>
+          <div className="settings-grid">
+            <div className="field">
+              <label>Public handle</label>
+              <input value={handleDraft} onChange={e => setHandleDraft(e.target.value)} placeholder="acedout" />
+              <div className="hint">Shown as @{sanitizeUsername(handleDraft) || 'handle'}.</div>
+            </div>
+            <div className="field">
+              <label>Display name</label>
+              <input value={displayDraft} onChange={e => setDisplayDraft(e.target.value)} placeholder="Optional" />
+            </div>
+          </div>
+          <div className="field">
+            <label>Bio</label>
+            <textarea value={bioDraft} maxLength={240} rows={3} onChange={e => setBioDraft(e.target.value)} placeholder="What are you building?" />
+            <div className="hint">{240 - bioDraft.length} left</div>
+          </div>
+          <button className="btn btn-primary" onClick={handleProfileSave} disabled={profileBusy}>
+            {profileBusy ? 'Saving…' : 'Save profile'}
+          </button>
+        </section>
+      )}
 
       {isOwnProfile && (
         <section className="agent-access">
