@@ -24,6 +24,8 @@ export interface Slop {
   category_slug: CategorySlug;
   built_with: string[];
   type?: 'web' | 'desktop' | 'cli' | 'plugin' | 'mobile';
+  submitted_via?: 'web' | 'api';
+  flag_count?: number;
   screenshot_url: string | null;
   vote_count: number;
   status: 'pending' | 'approved' | 'rejected';
@@ -41,6 +43,9 @@ export interface Profile {
   avatar_url: string | null;
   bio: string | null;
   is_admin: boolean;
+  created_at?: string;
+  is_banned?: boolean;
+  ban_reason?: string | null;
 }
 
 export interface ApiKey {
@@ -101,6 +106,7 @@ let demoSlops: Slop[] = [
 let demoVotes = new Set<string>();
 let demoUser: Profile | null = null;
 let demoApiKeys: ApiKey[] = [];
+let demoFlags = new Set<string>();
 
 // ============ DATA LAYER ============
 // Every function works in both modes. Demo mode = in-memory, resets on reload.
@@ -165,6 +171,7 @@ export async function fetchMyVotes(userId: string): Promise<Set<string>> {
 }
 
 export async function toggleVote(submissionId: string, userId: string, currentlyVoted: boolean): Promise<void> {
+  if (await isBanned(userId)) throw new Error('Banned users cannot vote.');
   if (DEMO_MODE) {
     const s = demoSlops.find(x => x.id === submissionId);
     if (!s) return;
@@ -186,20 +193,31 @@ export async function submitSlop(input: {
   category_slug: CategorySlug; built_with: string[]; submitter: Profile;
 }): Promise<{ ok: boolean; error?: string }> {
   const slug = slugify(input.name);
+  if (input.submitter.is_banned) return { ok: false, error: input.submitter.ban_reason || 'This account cannot submit right now.' };
+  const urlCheck = validateSubmissionUrl(input.url);
+  if (!urlCheck.valid) return { ok: false, error: urlCheck.reason };
+  const normalizedUrl = normalizeUrl(input.url);
   if (DEMO_MODE) {
-    if (demoSlops.some(s => s.slug === slug || s.url === input.url)) return { ok: false, error: 'That one\'s already been submitted.' };
+    if (demoSlops.some(s => s.slug === slug || normalizeUrl(s.url) === normalizedUrl)) return { ok: false, error: 'That one\'s already been submitted.' };
     demoSlops.unshift({
-      id: String(Date.now()), slug, name: input.name, url: input.url, tagline: input.tagline,
+      id: String(Date.now()), slug, name: input.name, url: normalizedUrl, tagline: input.tagline,
       description: input.description || input.tagline, category_slug: input.category_slug,
-      built_with: input.built_with, screenshot_url: null, vote_count: 1, status: 'pending',
+      built_with: input.built_with, screenshot_url: null, vote_count: 1, status: 'pending', submitted_via: 'web',
       created_at: new Date().toISOString(), submitter_id: input.submitter.id, builder_username: input.submitter.username,
     });
     return { ok: true };
   }
+  const limit = await checkSubmissionLimit(input.submitter.id, 'web');
+  if (!limit.allowed) return { ok: false, error: `Submission limit reached. You can submit 5 tools per day. Resets ${limit.resetAt.toLocaleString()}.` };
+  const duplicate = await findDuplicateUrl(normalizedUrl);
+  if (duplicate) {
+    return { ok: false, error: duplicate.status === 'approved' ? 'This tool is already listed on SLOP LOCAL.' : 'This URL has already been submitted and is pending review.' };
+  }
+  await recordSubmissionAttempt(input.submitter.id, 'web');
   const { error } = await supabase!.from('submissions').insert({
-    name: input.name, slug, url: input.url, tagline: input.tagline,
+    name: input.name, slug, url: normalizedUrl, normalized_url: normalizedUrl, tagline: input.tagline,
     description: input.description || null, category_slug: input.category_slug,
-    built_with: input.built_with, submitter_id: input.submitter.id,
+    built_with: input.built_with, submitter_id: input.submitter.id, submitted_via: 'web',
   });
   if (error) {
     if (error.code === '23505') return { ok: false, error: 'That one\'s already been submitted.' };
@@ -229,6 +247,21 @@ export async function reviewSubmission(id: string, status: 'approved' | 'rejecte
   }
   const { error } = await supabase!.from('submissions').update({ status, reject_reason: rejectReason ?? null }).eq('id', id);
   if (error) throw error;
+}
+
+export async function banUser(userId: string, reason: string): Promise<void> {
+  if (DEMO_MODE) {
+    demoSlops = demoSlops.map(s => s.submitter_id === userId && s.status === 'pending' ? { ...s, status: 'rejected', reject_reason: reason } : s);
+    return;
+  }
+  const { error } = await supabase!.from('profiles').update({ is_banned: true, ban_reason: reason }).eq('id', userId);
+  if (error) throw error;
+  const { error: rejectError } = await supabase!
+    .from('submissions')
+    .update({ status: 'rejected', reject_reason: reason })
+    .eq('submitter_id', userId)
+    .eq('status', 'pending');
+  if (rejectError) throw rejectError;
 }
 
 // ============ AUTH ============
@@ -292,6 +325,10 @@ export async function fetchApiKeys(userId: string): Promise<ApiKey[]> {
 }
 
 export async function createApiKey(userId: string, label: string): Promise<{ key: string; record: ApiKey }> {
+  const profile = await fetchProfileById(userId);
+  if (profile?.is_banned) throw new Error(profile.ban_reason || 'This account cannot generate API keys.');
+  const unlock = apiAccessUnlock(profile);
+  if (!unlock.unlocked) throw new Error(`API access unlocks in ${unlock.hoursRemaining} hours.`);
   const key = `slop_live_${randomToken()}`;
   const keyHash = await hashKey(key);
   const record = {
@@ -332,7 +369,83 @@ export async function revokeApiKey(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function flagSubmission(submissionId: string, userId: string, reason: string): Promise<void> {
+  if (await isBanned(userId)) throw new Error('Banned users cannot flag listings.');
+  if (DEMO_MODE) {
+    const key = `${submissionId}:${userId}`;
+    if (demoFlags.has(key)) throw new Error('You already flagged this listing.');
+    demoFlags.add(key);
+    return;
+  }
+  const { error } = await supabase!.from('flags').insert({ submission_id: submissionId, user_id: userId, reason });
+  if (error) {
+    if (error.code === '23505') throw new Error('You already flagged this listing.');
+    throw error;
+  }
+}
+
+export function normalizeUrl(rawUrl: string): string {
+  const u = new URL(rawUrl);
+  return `${u.protocol}//${u.hostname}${u.pathname}`.replace(/\/$/, '').toLowerCase();
+}
+
+export function validateSubmissionUrl(rawUrl: string): { valid: boolean; reason?: string } {
+  let parsed: URL;
+  try { parsed = new URL(rawUrl); } catch { return { valid: false, reason: 'Invalid URL format.' }; }
+  if (!['http:', 'https:'].includes(parsed.protocol)) return { valid: false, reason: 'Only http and https URLs are allowed.' };
+  const host = parsed.hostname.toLowerCase();
+  const blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0'];
+  if (blockedHosts.includes(host) || host.endsWith('.local') || host.startsWith('10.') || host.startsWith('192.168.')) {
+    return { valid: false, reason: 'Local or private URLs are not allowed.' };
+  }
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) return { valid: false, reason: 'Local or private URLs are not allowed.' };
+  return { valid: true };
+}
+
+export function apiAccessUnlock(profile: Profile | null): { unlocked: boolean; hoursRemaining: number } {
+  if (!profile?.created_at || DEMO_MODE) return { unlocked: true, hoursRemaining: 0 };
+  const unlockAt = new Date(profile.created_at).getTime() + 48 * 3600000;
+  const remaining = unlockAt - Date.now();
+  return { unlocked: remaining <= 0, hoursRemaining: Math.ceil(Math.max(0, remaining) / 3600000) };
+}
+
 // ============ HELPERS ============
+
+async function fetchProfileById(userId: string): Promise<Profile | null> {
+  if (DEMO_MODE) return demoUser?.id === userId ? demoUser : null;
+  const { data } = await supabase!.from('profiles').select('*').eq('id', userId).maybeSingle();
+  return data as Profile | null;
+}
+
+async function isBanned(userId: string): Promise<boolean> {
+  const profile = await fetchProfileById(userId);
+  return Boolean(profile?.is_banned);
+}
+
+async function findDuplicateUrl(normalizedUrl: string): Promise<{ id: string; status: string } | null> {
+  const { data } = await supabase!
+    .from('submissions')
+    .select('id, status')
+    .eq('normalized_url', normalizedUrl)
+    .maybeSingle();
+  return data as { id: string; status: string } | null;
+}
+
+async function checkSubmissionLimit(userId: string, source: 'web' | 'api'): Promise<{ allowed: boolean; remaining: number; resetAt: Date }> {
+  const windowStart = new Date(Date.now() - 24 * 3600000);
+  const { count } = await supabase!
+    .from('submission_attempts')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('attempted_at', windowStart.toISOString());
+  const limit = source === 'api' ? 3 : 5;
+  const remaining = Math.max(0, limit - (count ?? 0));
+  return { allowed: remaining > 0, remaining, resetAt: new Date(Date.now() + 24 * 3600000) };
+}
+
+async function recordSubmissionAttempt(userId: string, source: 'web' | 'api'): Promise<void> {
+  await supabase!.from('submission_attempts').insert({ user_id: userId, source });
+}
 
 function mapRow(row: any): Slop {
   return {
@@ -345,6 +458,8 @@ function mapRow(row: any): Slop {
     category_slug: row.category_slug,
     built_with: row.built_with ?? [],
     type: row.type ?? 'web',
+    submitted_via: row.submitted_via ?? 'web',
+    flag_count: row.flag_count ?? 0,
     screenshot_url: row.screenshot_url,
     vote_count: row.vote_count ?? 0,
     status: row.status,

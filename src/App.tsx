@@ -85,6 +85,12 @@ function Footer() {
     <footer>
       <div className="wrap footer-inner">
         <div className="footer-motto">🥕 Slop Local — built fast · built local · not sorry</div>
+        <div className="footer-agent">
+          <span className="footer-agent-icon">⬡</span>
+          <span>Agent-native</span>
+          <span className="footer-divider">·</span>
+          <Link to="/docs/agent" className="footer-agent-link">slop-local-mcp on npm →</Link>
+        </div>
         <div className="footer-motto">sloplocal.com · est. 2026</div>
       </div>
     </footer>

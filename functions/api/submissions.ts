@@ -1,12 +1,17 @@
 import {
   Env,
   adminSupabase,
+  assertUrlResolves,
   approvedSubmissions,
+  checkSubmissionLimit,
   handleOptions,
   hotScore,
   json,
+  jsonWithRateLimit,
   mapSubmission,
-  validateApiKey,
+  recordSubmissionAttempt,
+  validateApiKeyProfile,
+  validateSubmissionUrl,
   validCategory,
   validType,
 } from './_shared';
@@ -46,8 +51,9 @@ export async function onRequestGet({ request, env }: Context) {
 
 export async function onRequestPost({ request, env }: Context) {
   try {
-    const userId = await validateApiKey(request, env);
-    if (!userId) return json({ error: 'Valid Bearer API key required.' }, { status: 401 });
+    const apiUser = await validateApiKeyProfile(request, env);
+    if (!apiUser) return json({ error: 'Valid Bearer API key required.' }, { status: 401 });
+    if (apiUser.isBanned) return json({ error: 'This account cannot submit right now.' }, { status: 403 });
 
     const body = await request.json<any>();
     const name = String(body.name ?? '').trim();
@@ -64,23 +70,47 @@ export async function onRequestPost({ request, env }: Context) {
     if (tagline.length > 120) return json({ error: 'tagline must be 120 characters or fewer.' }, { status: 400 });
     if (description.length > 500) return json({ error: 'description must be 500 characters or fewer.' }, { status: 400 });
     if (!validType(type)) return json({ error: 'Invalid type.' }, { status: 400 });
-    try { new URL(projectUrl); } catch { return json({ error: 'url must be a valid URL.' }, { status: 400 }); }
+    const urlCheck = validateSubmissionUrl(projectUrl);
+    if (!urlCheck.valid || !urlCheck.normalizedUrl) return json({ error: urlCheck.reason ?? 'Invalid URL.' }, { status: 400 });
+    const resolveCheck = await assertUrlResolves(projectUrl);
+    if (!resolveCheck.valid) return json({ error: resolveCheck.reason }, { status: 400 });
 
     const slugBase = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     const slug = slugBase || `slop-${Date.now()}`;
     const supabase = adminSupabase(env);
+    const limit = await checkSubmissionLimit(env, apiUser.userId, 'api');
+    if (!limit.allowed) {
+      return jsonWithRateLimit({
+        error: `Submission limit reached. You can submit 3 tools per day via API. Resets ${limit.resetAt.toISOString()}.`,
+        reset_at: limit.resetAt.toISOString(),
+      }, limit, { status: 429 });
+    }
+
+    const { data: existing, error: existingError } = await supabase
+      .from('submissions')
+      .select('id, status')
+      .eq('normalized_url', urlCheck.normalizedUrl)
+      .maybeSingle();
+    if (existingError) return json({ error: existingError.message }, { status: 400 });
+    if (existing) {
+      return json({ error: existing.status === 'approved' ? 'This tool is already listed on SLOP LOCAL.' : 'This URL has already been submitted and is pending review.' }, { status: 409 });
+    }
+
+    await recordSubmissionAttempt(env, apiUser.userId, 'api');
     const { data, error } = await supabase
       .from('submissions')
       .insert({
-        submitter_id: userId,
+        submitter_id: apiUser.userId,
         name,
         slug,
-        url: projectUrl,
+        url: urlCheck.normalizedUrl,
+        normalized_url: urlCheck.normalizedUrl,
         tagline,
         description: description || null,
         category_slug: category,
         built_with: builtWith,
         type,
+        submitted_via: 'api',
         status: 'pending',
       })
       .select('id, status')
@@ -91,11 +121,11 @@ export async function onRequestPost({ request, env }: Context) {
       return json({ error: error.message }, { status: 400 });
     }
 
-    return json({
+    return jsonWithRateLimit({
       id: data.id,
       status: data.status,
       message: 'Submission received. Pending review before going live.',
-    }, { status: 201 });
+    }, { ...limit, remaining: Math.max(0, limit.remaining - 1) }, { status: 201 });
   } catch (error: any) {
     return json({ error: error.message ?? 'Unable to create submission.' }, { status: 500 });
   }

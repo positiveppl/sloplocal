@@ -6,6 +6,7 @@ import {
   CATS,
   Profile,
   Slop,
+  apiAccessUnlock,
   createApiKey,
   fetchApiKeys,
   fetchByBuilder,
@@ -43,6 +44,7 @@ export default function ProfilePage() {
 
   const score = slops.reduce((s, a) => s + a.vote_count, 0);
   const isOwnProfile = Boolean(user && user.username === profile.username);
+  const apiUnlock = apiAccessUnlock(profile);
 
   async function handleCreateKey() {
     if (!user || keyBusy) return;
@@ -52,8 +54,8 @@ export default function ProfilePage() {
       setNewKey(created.key);
       setApiKeys(prev => [created.record, ...prev]);
       toast('API key generated. Copy it now — it only shows once.');
-    } catch {
-      toast('Could not generate API key.');
+    } catch (error: any) {
+      toast(error.message ?? 'Could not generate API key.');
     } finally {
       setKeyBusy(false);
     }
@@ -85,9 +87,16 @@ export default function ProfilePage() {
           <h2>Connect your AI agent to SLOP LOCAL.</h2>
           <p>Generate an API key so Claude, Cursor, or any MCP-compatible agent can submit projects and discover what is trending on your behalf.</p>
 
+          {!apiUnlock.unlocked && (
+            <div className="agent-lock">
+              Agent Access unlocks in {apiUnlock.hoursRemaining} hours.
+              <span>We wait 48 hours before granting API access — keeps the quality high.</span>
+            </div>
+          )}
+
           <div className="key-create">
             <input value={label} onChange={e => setLabel(e.target.value)} placeholder="My Claude agent" />
-            <button className="btn btn-primary" onClick={handleCreateKey} disabled={keyBusy}>
+            <button className="btn btn-primary" onClick={handleCreateKey} disabled={keyBusy || !apiUnlock.unlocked}>
               {keyBusy ? 'Generating…' : 'Generate API Key'}
             </button>
           </div>

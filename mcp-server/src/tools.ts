@@ -113,7 +113,7 @@ export async function handleTool(name: string, args: Record<string, any>) {
 
 async function submitSlop(args: Record<string, any>) {
   if (!API_KEY) return text('Set SLOP_LOCAL_API_KEY before submitting.');
-  const data = await request('/submissions', {
+  const res = await fetch(`${API_BASE}/submissions`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
@@ -121,6 +121,9 @@ async function submitSlop(args: Record<string, any>) {
     },
     body: JSON.stringify(args),
   });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 429) return text(`Rate limit reached: ${data.error} The builder can submit more tomorrow.`);
+  if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
   return text(`Submitted! "${args.name}" is pending review. ID: ${data.id}`);
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth, useToast } from '../App';
-import { CATS, Slop, fetchPending, reviewSubmission } from '../lib/data';
+import { CATS, Slop, banUser, fetchPending, reviewSubmission } from '../lib/data';
 
 export default function Admin() {
   const { user } = useAuth();
@@ -30,6 +30,15 @@ export default function Admin() {
     load();
   }
 
+  async function handleBan(s: Slop) {
+    if (!s.submitter_id) return;
+    const reason = window.prompt(`Ban @${s.builder_username}? Reason:`) ?? undefined;
+    if (reason === undefined) return;
+    await banUser(s.submitter_id, reason || 'Banned by admin moderation.');
+    toast(`@${s.builder_username} banned and pending submissions rejected.`);
+    load();
+  }
+
   return (
     <div className="narrow-wrap">
       <Link to="/" className="back-link">← Back to the board</Link>
@@ -42,14 +51,21 @@ export default function Admin() {
         <div key={s.id} className="admin-row">
           <div className="app-name">{s.name}</div>
           <div className="app-tagline">{s.tagline}</div>
+          <a className="admin-url" href={s.url} target="_blank" rel="noopener noreferrer">{s.url}</a>
           {s.description && <div className="app-tagline" style={{ marginTop: 8 }}>{s.description}</div>}
           <div className="admin-meta">
-            {CATS[s.category_slug]?.label ?? s.category_slug} · by @{s.builder_username} · {s.built_with.join(', ') || 'no tags'}
+            {CATS[s.category_slug]?.label ?? s.category_slug} · {s.built_with.join(', ') || 'no tags'}
+          </div>
+          <div className="moderation-meta">
+            <span>submitted via {s.submitted_via ?? 'web'}</span>
+            <span>by @{s.builder_username}</span>
+            <span>flags: {s.flag_count ?? 0}</span>
           </div>
           <div className="admin-actions">
             <a className="btn" href={s.url} target="_blank" rel="noopener noreferrer">Open site →</a>
             <button className="btn" onClick={() => review(s, 'approved')}>Approve</button>
             <button className="btn btn-danger" onClick={() => review(s, 'rejected')}>Reject</button>
+            <button className="btn btn-danger" onClick={() => handleBan(s)}>Ban user</button>
           </div>
         </div>
       ))}

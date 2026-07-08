@@ -11,6 +11,8 @@ create table profiles (
   bio text,
   github_handle text,
   is_admin boolean default false,
+  is_banned boolean default false,
+  ban_reason text,
   created_at timestamptz default now()
 );
 
@@ -35,15 +37,18 @@ create table submissions (
   name text not null,
   slug text unique not null,
   url text not null,
+  normalized_url text unique,
   tagline text not null check (char_length(tagline) <= 120),
   description text check (char_length(description) <= 500),
   category_slug text references categories(slug),
   built_with text[],
   type text default 'web' check (type in ('web', 'desktop', 'cli', 'plugin', 'mobile')),
+  submitted_via text default 'web' check (submitted_via in ('web', 'api')),
   screenshot_url text,
   status text default 'pending' check (status in ('pending', 'approved', 'rejected')),
   reject_reason text,
-  vote_count int default 0
+  vote_count int default 0,
+  flag_count int default 0
 );
 
 create table votes (
@@ -65,6 +70,22 @@ create table api_keys (
   is_active boolean default true
 );
 
+create table flags (
+  id uuid primary key default gen_random_uuid(),
+  submission_id uuid references submissions(id) on delete cascade,
+  user_id uuid references profiles(id),
+  reason text check (reason in ('spam', 'not_free', 'broken', 'low_effort', 'harmful')),
+  created_at timestamptz default now(),
+  unique (submission_id, user_id)
+);
+
+create table submission_attempts (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id),
+  attempted_at timestamptz default now(),
+  source text check (source in ('web', 'api'))
+);
+
 -- ============ VOTE COUNT TRIGGER ============
 
 create or replace function update_vote_count()
@@ -82,6 +103,29 @@ $$ language plpgsql security definer;
 create trigger vote_count_trigger
 after insert or delete on votes
 for each row execute function update_vote_count();
+
+-- ============ FLAG THRESHOLD TRIGGER ============
+
+create or replace function check_flag_threshold()
+returns trigger as $$
+declare
+  current_flag_count int;
+begin
+  select count(*) into current_flag_count
+  from flags where submission_id = NEW.submission_id;
+
+  update submissions
+  set flag_count = current_flag_count,
+      status = case when current_flag_count >= 3 then 'pending' else status end
+  where id = NEW.submission_id;
+
+  return NEW;
+end;
+$$ language plpgsql security definer;
+
+create trigger flag_threshold_trigger
+after insert on flags
+for each row execute function check_flag_threshold();
 
 -- ============ AUTO-CREATE PROFILE ON SIGNUP ============
 -- Username defaults from GitHub handle / email prefix; user can change it later.
@@ -137,20 +181,37 @@ alter table submissions enable row level security;
 create policy "Read approved or own or admin" on submissions for select
   using (status = 'approved' or auth.uid() = submitter_id or is_admin());
 create policy "Own insert" on submissions for insert
-  with check (auth.uid() = submitter_id);
+  with check (
+    auth.uid() = submitter_id and
+    not exists (select 1 from profiles where id = auth.uid() and is_banned = true)
+  );
 -- FIX from original spec: admins need update rights to approve/reject.
 create policy "Admin update" on submissions for update
   using (is_admin());
 
 alter table votes enable row level security;
 create policy "Public votes" on votes for select using (true);
-create policy "Own vote insert" on votes for insert with check (auth.uid() = user_id);
+create policy "Own vote insert" on votes for insert with check (
+  auth.uid() = user_id and
+  not exists (select 1 from profiles where id = auth.uid() and is_banned = true)
+);
 create policy "Own vote delete" on votes for delete using (auth.uid() = user_id);
 
 alter table api_keys enable row level security;
 create policy "Own API keys read" on api_keys for select using (auth.uid() = user_id);
 create policy "Own API keys insert" on api_keys for insert with check (auth.uid() = user_id);
 create policy "Own API keys update" on api_keys for update using (auth.uid() = user_id);
+
+alter table flags enable row level security;
+create policy "Own flags read" on flags for select using (auth.uid() = user_id or is_admin());
+create policy "Own flag insert" on flags for insert with check (
+  auth.uid() = user_id and
+  not exists (select 1 from profiles where id = auth.uid() and is_banned = true)
+);
+
+alter table submission_attempts enable row level security;
+create policy "Own attempts read" on submission_attempts for select using (auth.uid() = user_id);
+create policy "Own attempts insert" on submission_attempts for insert with check (auth.uid() = user_id);
 
 -- ============ AFTER RUNNING ============
 -- 1. Enable GitHub OAuth in Authentication > Providers (optional but recommended).

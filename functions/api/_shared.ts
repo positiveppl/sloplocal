@@ -22,6 +22,18 @@ export function json(data: unknown, init: ResponseInit = {}) {
   });
 }
 
+export function jsonWithRateLimit(data: unknown, limit: RateLimitResult, init: ResponseInit = {}) {
+  return json(data, {
+    ...init,
+    headers: {
+      'x-ratelimit-limit': String(limit.limit),
+      'x-ratelimit-remaining': String(limit.remaining),
+      'x-ratelimit-reset': limit.resetAt.toISOString(),
+      ...init.headers,
+    },
+  });
+}
+
 export function handleOptions() {
   return json({}, { status: 204 });
 }
@@ -72,6 +84,86 @@ export async function validateApiKey(request: Request, env: Env): Promise<string
     .eq('key_hash', keyHash);
 
   return data.user_id as string;
+}
+
+export async function validateApiKeyProfile(request: Request, env: Env): Promise<{ userId: string; isBanned: boolean; createdAt: string } | null> {
+  const auth = request.headers.get('authorization');
+  if (!auth?.startsWith('Bearer ')) return null;
+  const rawKey = auth.slice(7).trim();
+  if (!rawKey.startsWith('slop_live_')) return null;
+
+  const keyHash = await hashKey(rawKey);
+  const supabase = adminSupabase(env);
+  const { data, error } = await supabase
+    .from('api_keys')
+    .select('user_id, is_active')
+    .eq('key_hash', keyHash)
+    .maybeSingle();
+
+  if (error || !data?.is_active) return null;
+  await supabase.from('api_keys').update({ last_used_at: new Date().toISOString() }).eq('key_hash', keyHash);
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_banned, created_at')
+    .eq('id', data.user_id)
+    .maybeSingle();
+  return {
+    userId: data.user_id as string,
+    isBanned: Boolean(profile?.is_banned),
+    createdAt: String(profile?.created_at ?? ''),
+  };
+}
+
+export function normalizeUrl(rawUrl: string): string {
+  const u = new URL(rawUrl);
+  return `${u.protocol}//${u.hostname}${u.pathname}`.replace(/\/$/, '').toLowerCase();
+}
+
+export function validateSubmissionUrl(rawUrl: string): { valid: boolean; reason?: string; normalizedUrl?: string } {
+  let parsed: URL;
+  try { parsed = new URL(rawUrl); } catch { return { valid: false, reason: 'Invalid URL format.' }; }
+  if (!['http:', 'https:'].includes(parsed.protocol)) return { valid: false, reason: 'Only http and https URLs are allowed.' };
+  const host = parsed.hostname.toLowerCase();
+  if (['localhost', '127.0.0.1', '0.0.0.0'].includes(host) || host.endsWith('.local') || host.startsWith('10.') || host.startsWith('192.168.')) {
+    return { valid: false, reason: 'Local or private URLs are not allowed.' };
+  }
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) return { valid: false, reason: 'Local or private URLs are not allowed.' };
+  return { valid: true, normalizedUrl: normalizeUrl(rawUrl) };
+}
+
+export async function assertUrlResolves(rawUrl: string): Promise<{ valid: boolean; reason?: string }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    let res = await fetch(rawUrl, { method: 'HEAD', signal: controller.signal });
+    if (res.status === 405) res = await fetch(rawUrl, { method: 'GET', signal: controller.signal });
+    if (!res.ok) return { valid: false, reason: `URL returned ${res.status}.` };
+    return { valid: true };
+  } catch {
+    return { valid: false, reason: 'URL did not resolve. Make sure the site is live.' };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export type RateLimitResult = { allowed: boolean; limit: number; remaining: number; resetAt: Date };
+
+export async function checkSubmissionLimit(env: Env, userId: string, source: 'web' | 'api'): Promise<RateLimitResult> {
+  const limit = source === 'api' ? 3 : 5;
+  const windowStart = new Date(Date.now() - 24 * 3600000);
+  const { count, error } = await adminSupabase(env)
+    .from('submission_attempts')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('attempted_at', windowStart.toISOString());
+  if (error) throw error;
+  const remaining = Math.max(0, limit - (count ?? 0));
+  return { allowed: remaining > 0, limit, remaining, resetAt: new Date(Date.now() + 24 * 3600000) };
+}
+
+export async function recordSubmissionAttempt(env: Env, userId: string, source: 'web' | 'api') {
+  await adminSupabase(env).from('submission_attempts').insert({ user_id: userId, source });
 }
 
 export function hotScore(votes: number, createdAt: string): number {

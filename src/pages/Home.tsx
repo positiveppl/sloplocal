@@ -119,6 +119,14 @@ export default function Home() {
           </div>
         </div>
       ))}
+
+      <div className="agent-callout">
+        <div className="agent-callout-left">
+          <span className="agent-callout-label">Built for agents too</span>
+          <p>Your AI agent can submit tools, browse listings, and find market gaps via MCP.</p>
+        </div>
+        <Link to="/docs/agent" className="btn">Connect your agent →</Link>
+      </div>
     </div>
   );
 }

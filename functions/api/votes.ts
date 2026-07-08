@@ -1,4 +1,4 @@
-import { Env, adminSupabase, handleOptions, json, validateApiKey } from './_shared';
+import { Env, adminSupabase, handleOptions, json, validateApiKeyProfile } from './_shared';
 
 type Context = EventContext<Env, string, unknown>;
 
@@ -8,8 +8,9 @@ export async function onRequestOptions() {
 
 export async function onRequestPost({ request, env }: Context) {
   try {
-    const userId = await validateApiKey(request, env);
-    if (!userId) return json({ error: 'Valid Bearer API key required.' }, { status: 401 });
+    const apiUser = await validateApiKeyProfile(request, env);
+    if (!apiUser) return json({ error: 'Valid Bearer API key required.' }, { status: 401 });
+    if (apiUser.isBanned) return json({ error: 'This account cannot vote right now.' }, { status: 403 });
 
     const body = await request.json<any>();
     const submissionId = String(body.submission_id ?? '').trim();
@@ -17,7 +18,7 @@ export async function onRequestPost({ request, env }: Context) {
 
     const { error } = await adminSupabase(env)
       .from('votes')
-      .insert({ submission_id: submissionId, user_id: userId });
+      .insert({ submission_id: submissionId, user_id: apiUser.userId });
 
     if (error) {
       if (error.code === '23505') return json({ ok: true, message: 'Already voted.' });

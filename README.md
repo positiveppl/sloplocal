@@ -95,7 +95,19 @@ REST endpoints:
 - `POST /api/votes` — vote with a Bearer API key
 
 Users can generate API keys from their profile under Agent Access. Keys are
-shown once and stored only as SHA-256 hashes in Supabase.
+shown once and stored only as SHA-256 hashes in Supabase. API access unlocks
+48 hours after account creation.
+
+Moderation and queue hygiene:
+
+- Every submission stays `pending` until an admin approves it
+- URLs are normalized and duplicate URLs are rejected
+- API submissions must resolve before they enter the queue
+- Web submissions are capped at 5 per account per day
+- API submissions are capped at 3 per account per day and return rate-limit headers
+- Logged-in users can flag approved listings from the detail page
+- Three unique flags pulls a listing back to `pending`
+- Admins can reject, approve, or ban users from the review queue
 
 Claude Desktop config:
 
