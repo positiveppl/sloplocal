@@ -79,6 +79,11 @@ function Nav() {
           ) : (
             <Link to="/login" className="btn hide-sm">Sign in</Link>
           )}
+          {user ? (
+            <Link to={`/profile/${user.username}`} className="btn mobile-auth">@{user.username}</Link>
+          ) : (
+            <Link to="/login" className="btn mobile-auth">Sign in</Link>
+          )}
           <Link to="/submit" className="btn btn-primary">Drop your slop ↗</Link>
         </div>
       </div>

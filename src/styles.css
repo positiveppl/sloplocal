@@ -46,6 +46,7 @@ nav { border-bottom: 2px solid var(--ink); }
 .nav-links { display: flex; align-items: center; gap: 8px; }
 .nav-link { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; padding: 9px 14px; cursor: pointer; background: none; border: none; color: var(--ink-mid); }
 .nav-link:hover { color: var(--riso-orange); }
+.mobile-auth { display: none; }
 
 .btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 16px; cursor: pointer; background: none; border: 1.5px solid var(--ink); color: var(--ink); border-radius: 0; display: inline-block; }
 .btn:hover { background: var(--paper-dark); }
@@ -229,6 +230,7 @@ footer { border-top: 2px solid var(--ink); margin-top: 60px; padding: 24px 0 40p
   .row-meta { grid-area: meta; display: flex !important; gap: 10px; align-items: center; flex-wrap: wrap; }
   .vote-btn { width: auto; }
   .hide-sm { display: none !important; }
+  .mobile-auth { display: inline-block; padding: 10px 12px; }
   .key-create, .key-row { grid-template-columns: 1fr; }
   .settings-grid { grid-template-columns: 1fr; }
   .agent-callout { align-items: flex-start; flex-direction: column; }
