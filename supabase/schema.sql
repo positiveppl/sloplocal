@@ -128,7 +128,7 @@ after insert on flags
 for each row execute function check_flag_threshold();
 
 -- ============ AUTO-CREATE PROFILE ON SIGNUP ============
--- Username defaults from GitHub handle / email prefix; user can change it later.
+-- Username defaults from GitHub handle / submitted handle. Never expose email.
 
 create or replace function handle_new_user()
 returns trigger as $$
@@ -140,8 +140,7 @@ begin
   base_username := lower(regexp_replace(coalesce(
     NEW.raw_user_meta_data->>'user_name',
     NEW.raw_user_meta_data->>'preferred_username',
-    split_part(coalesce(NEW.email, ''), '@', 1),
-    'builder'
+    'builder-' || substr(md5(NEW.id::text), 1, 6)
   ), '[^a-z0-9_]+', '-', 'g'));
 
   base_username := trim(both '-' from base_username);

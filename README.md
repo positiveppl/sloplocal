@@ -39,6 +39,9 @@ Runs in demo mode until you add a `.env` (see below).
    update profiles set is_admin = true where username = 'YOUR_USERNAME';
    ```
 
+Email signup asks for a public handle. The database trigger never uses email
+addresses as usernames; if metadata is missing it falls back to `builder-xxxxxx`.
+
 The schema includes fixes over the original spec: an `is_admin` flag on
 profiles, RLS policies that let admins read the pending queue and
 approve/reject (the original policies would have blocked both), submitters

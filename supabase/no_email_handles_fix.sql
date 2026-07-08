@@ -1,5 +1,6 @@
--- SLOP LOCAL signup trigger fix
--- Run this in Supabase SQL Editor if /auth/v1/signup returns 500.
+-- SLOP LOCAL public handle privacy fix
+-- Run this after auth_signup_fix.sql if existing profiles were created from email prefixes.
+-- This makes future fallback handles builder-xxxxxx instead of email-derived.
 
 create or replace function handle_new_user()
 returns trigger as $$
@@ -16,7 +17,7 @@ begin
 
   base_username := trim(both '-' from base_username);
   if base_username = '' then
-    base_username := 'builder';
+    base_username := 'builder-' || substr(md5(NEW.id::text), 1, 6);
   end if;
 
   candidate_username := base_username;
@@ -43,3 +44,10 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function handle_new_user();
+
+-- Optional targeted cleanup for a profile that was already created from an email.
+-- Replace the id and username below, then run only that update.
+--
+-- update public.profiles
+-- set username = 'your-handle'
+-- where id = 'your-user-id';

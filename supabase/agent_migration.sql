@@ -23,8 +23,7 @@ begin
   base_username := lower(regexp_replace(coalesce(
     NEW.raw_user_meta_data->>'user_name',
     NEW.raw_user_meta_data->>'preferred_username',
-    split_part(coalesce(NEW.email, ''), '@', 1),
-    'builder'
+    'builder-' || substr(md5(NEW.id::text), 1, 6)
   ), '[^a-z0-9_]+', '-', 'g'));
 
   base_username := trim(both '-' from base_username);

@@ -284,9 +284,14 @@ export async function signInEmail(email: string, password: string): Promise<{ ok
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
-export async function signUpEmail(email: string, password: string): Promise<{ ok: boolean; error?: string }> {
+export async function signUpEmail(email: string, password: string, username?: string): Promise<{ ok: boolean; error?: string }> {
   if (DEMO_MODE) { demoSignIn(); return { ok: true }; }
-  const { error } = await supabase!.auth.signUp({ email, password });
+  const cleanUsername = sanitizeUsername(username ?? '');
+  const { error } = await supabase!.auth.signUp({
+    email,
+    password,
+    options: cleanUsername ? { data: { user_name: cleanUsername, preferred_username: cleanUsername } } : undefined,
+  });
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
@@ -479,6 +484,10 @@ function randomToken(): string {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+export function sanitizeUsername(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9_]+/g, '-').replace(/^-|-$/g, '').slice(0, 32);
 }
 
 async function hashKey(key: string): Promise<string> {

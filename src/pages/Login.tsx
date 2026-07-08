@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useToast } from '../App';
-import { DEMO_MODE, signInEmail, signInGitHub, signUpEmail } from '../lib/data';
+import { DEMO_MODE, sanitizeUsername, signInEmail, signInGitHub, signUpEmail } from '../lib/data';
 
 export default function Login() {
   const { refresh } = useAuth();
@@ -10,6 +10,7 @@ export default function Login() {
 
   const [mode, setMode] = useState<'in' | 'up'>('in');
   const [email, setEmail] = useState('');
+  const [handle, setHandle] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -17,8 +18,11 @@ export default function Login() {
   async function handleEmail() {
     setError('');
     if (!DEMO_MODE && (!email.trim() || !password)) { setError('Email and password, both.'); return; }
+    const cleanHandle = sanitizeUsername(handle);
+    if (mode === 'up' && !cleanHandle) { setError('Pick a public handle. No email addresses on the board.'); return; }
+    if (mode === 'up' && handle.includes('@')) { setError('Use a handle, not an email address.'); return; }
     setBusy(true);
-    const res = mode === 'in' ? await signInEmail(email, password) : await signUpEmail(email, password);
+    const res = mode === 'in' ? await signInEmail(email, password) : await signUpEmail(email, password, cleanHandle);
     setBusy(false);
     if (!res.ok) { setError(res.error ?? 'That didn\'t work.'); return; }
     await refresh();
@@ -48,6 +52,13 @@ export default function Login() {
         <label>Email</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" />
       </div>
+      {mode === 'up' && (
+        <div className="field">
+          <label>Public handle</label>
+          <input value={handle} onChange={e => setHandle(e.target.value)} placeholder="acedout" />
+          <div className="hint">Shown as @{sanitizeUsername(handle) || 'handle'}. Do not use your email.</div>
+        </div>
+      )}
       <div className="field">
         <label>Password</label>
         <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
