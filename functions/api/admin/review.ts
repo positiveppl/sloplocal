@@ -32,9 +32,12 @@ export async function onRequestPost({ request, env }: Context) {
     if (loadError) return json({ error: loadError.message }, { status: 400 });
     if (!submission) return json({ error: 'Submission not found.' }, { status: 404 });
 
+    let screenshotCaptured = false;
     let screenshotUrl = submission.screenshot_url as string | null;
     if (body.status === 'approved') {
-      screenshotUrl = await captureScreenshot(env, submission.id, submission.url, submission.name) ?? screenshotUrl;
+      const freshScreenshotUrl = await captureScreenshot(env, submission.id, submission.url, submission.name);
+      screenshotCaptured = Boolean(freshScreenshotUrl);
+      screenshotUrl = freshScreenshotUrl ?? screenshotUrl;
     }
 
     const update: Record<string, unknown> = {
@@ -55,7 +58,7 @@ export async function onRequestPost({ request, env }: Context) {
     return json({
       ok: true,
       submission: data,
-      screenshot_captured: Boolean(screenshotUrl),
+      screenshot_captured: screenshotCaptured,
     });
   } catch (error: any) {
     return json({ error: error.message ?? 'Unable to review submission.' }, { status: 500 });
@@ -80,26 +83,25 @@ async function validateAdmin(request: Request, env: Env): Promise<string | null>
 }
 
 async function captureScreenshot(env: Env, submissionId: string, targetUrl: string, name: string): Promise<string | null> {
-  if (!env.SCREENSHOTONE_ACCESS_KEY) return null;
-
-  const screenshotEndpoint = new URL('https://api.screenshotone.com/take');
-  screenshotEndpoint.searchParams.set('access_key', env.SCREENSHOTONE_ACCESS_KEY);
+  const screenshotEndpoint = new URL('https://api.microlink.io/');
   screenshotEndpoint.searchParams.set('url', targetUrl);
-  screenshotEndpoint.searchParams.set('viewport_width', '1440');
-  screenshotEndpoint.searchParams.set('viewport_height', '1000');
-  screenshotEndpoint.searchParams.set('device_scale_factor', '1');
-  screenshotEndpoint.searchParams.set('format', 'jpg');
-  screenshotEndpoint.searchParams.set('image_quality', '82');
-  screenshotEndpoint.searchParams.set('full_page', 'false');
-  screenshotEndpoint.searchParams.set('block_ads', 'true');
-  screenshotEndpoint.searchParams.set('block_cookie_banners', 'true');
-  screenshotEndpoint.searchParams.set('delay', '2');
-  screenshotEndpoint.searchParams.set('timeout', '30');
+  screenshotEndpoint.searchParams.set('screenshot', 'true');
+  screenshotEndpoint.searchParams.set('meta', 'false');
+  screenshotEndpoint.searchParams.set('viewport.width', '1440');
+  screenshotEndpoint.searchParams.set('viewport.height', '1000');
+  screenshotEndpoint.searchParams.set('waitUntil', 'networkidle2');
 
   const response = await fetch(screenshotEndpoint.toString());
   if (!response.ok) return null;
 
-  const bytes = await response.arrayBuffer();
+  const payload = await response.json() as { data?: { screenshot?: { url?: string } } };
+  const imageUrl = payload.data?.screenshot?.url;
+  if (!imageUrl) return null;
+
+  const imageResponse = await fetch(imageUrl);
+  if (!imageResponse.ok) return null;
+
+  const bytes = await imageResponse.arrayBuffer();
   if (bytes.byteLength === 0) return null;
 
   const bucket = env.SLOP_SCREENSHOT_BUCKET || 'screenshots';

@@ -33,7 +33,6 @@ Runs in demo mode until you add a `.env` (see below).
    VITE_SUPABASE_URL=        (Project Settings → API → Project URL)
    VITE_SUPABASE_ANON_KEY=   (Project Settings → API → anon public key)
    SUPABASE_SERVICE_ROLE_KEY= (Project Settings → API → service_role key, Cloudflare secret only)
-   SCREENSHOTONE_ACCESS_KEY= (optional, captures screenshots on approval)
    SLOP_SCREENSHOT_BUCKET=screenshots
    ```
 5. Sign up in the app once, then make yourself admin in the SQL editor:
@@ -62,9 +61,9 @@ signup via trigger.
    under Settings → Environment variables
 5. Add `SUPABASE_SERVICE_ROLE_KEY` as a Cloudflare Pages secret/environment
    variable too. It is used only by Pages Functions for API-key auth.
-6. Optional screenshots: add `SCREENSHOTONE_ACCESS_KEY` as a secret and
-   `SLOP_SCREENSHOT_BUCKET=screenshots`. Approved submissions will upload a
-   fresh JPG to Supabase Storage before going live.
+6. Approval screenshots use Microlink's free endpoint, no API key required.
+   Optionally set `SLOP_SCREENSHOT_BUCKET=screenshots`. Approved submissions
+   will upload a fresh JPG to Supabase Storage before going live.
 7. Custom domain: Pages project → Custom domains → add `sloplocal.com`
 
 **Option B — direct upload:**
