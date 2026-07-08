@@ -23,6 +23,7 @@ export interface Slop {
   description: string | null;
   category_slug: CategorySlug;
   built_with: string[];
+  type?: 'web' | 'desktop' | 'cli' | 'plugin' | 'mobile';
   screenshot_url: string | null;
   vote_count: number;
   status: 'pending' | 'approved' | 'rejected';
@@ -40,6 +41,15 @@ export interface Profile {
   avatar_url: string | null;
   bio: string | null;
   is_admin: boolean;
+}
+
+export interface ApiKey {
+  id: string;
+  key_preview: string;
+  label: string | null;
+  created_at: string;
+  last_used_at: string | null;
+  is_active: boolean;
 }
 
 // ============ SUPABASE CLIENT (or demo mode) ============
@@ -90,6 +100,7 @@ let demoSlops: Slop[] = [
 
 let demoVotes = new Set<string>();
 let demoUser: Profile | null = null;
+let demoApiKeys: ApiKey[] = [];
 
 // ============ DATA LAYER ============
 // Every function works in both modes. Demo mode = in-memory, resets on reload.
@@ -266,6 +277,61 @@ export function onAuthChange(cb: () => void): () => void {
   return () => data.subscription.unsubscribe();
 }
 
+// ============ AGENT API KEYS ============
+
+export async function fetchApiKeys(userId: string): Promise<ApiKey[]> {
+  if (DEMO_MODE) return demoApiKeys.filter(key => key.is_active);
+  const { data, error } = await supabase!
+    .from('api_keys')
+    .select('id, key_preview, label, created_at, last_used_at, is_active')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as ApiKey[];
+}
+
+export async function createApiKey(userId: string, label: string): Promise<{ key: string; record: ApiKey }> {
+  const key = `slop_live_${randomToken()}`;
+  const keyHash = await hashKey(key);
+  const record = {
+    user_id: userId,
+    key_hash: keyHash,
+    key_preview: `slop_live_${'•'.repeat(8)}${key.slice(-6)}`,
+    label: label.trim() || 'Agent key',
+  };
+
+  if (DEMO_MODE) {
+    const demoRecord: ApiKey = {
+      id: String(Date.now()),
+      key_preview: record.key_preview,
+      label: record.label,
+      created_at: new Date().toISOString(),
+      last_used_at: null,
+      is_active: true,
+    };
+    demoApiKeys.unshift(demoRecord);
+    return { key, record: demoRecord };
+  }
+
+  const { data, error } = await supabase!
+    .from('api_keys')
+    .insert(record)
+    .select('id, key_preview, label, created_at, last_used_at, is_active')
+    .single();
+  if (error) throw error;
+  return { key, record: data as ApiKey };
+}
+
+export async function revokeApiKey(id: string): Promise<void> {
+  if (DEMO_MODE) {
+    demoApiKeys = demoApiKeys.map(key => key.id === id ? { ...key, is_active: false } : key);
+    return;
+  }
+  const { error } = await supabase!.from('api_keys').update({ is_active: false }).eq('id', id);
+  if (error) throw error;
+}
+
 // ============ HELPERS ============
 
 function mapRow(row: any): Slop {
@@ -278,6 +344,7 @@ function mapRow(row: any): Slop {
     description: row.description,
     category_slug: row.category_slug,
     built_with: row.built_with ?? [],
+    type: row.type ?? 'web',
     screenshot_url: row.screenshot_url,
     vote_count: row.vote_count ?? 0,
     status: row.status,
@@ -291,4 +358,16 @@ function mapRow(row: any): Slop {
 
 export function fmtVotes(n: number): string {
   return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
+}
+
+function randomToken(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function hashKey(key: string): Promise<string> {
+  const data = new TextEncoder().encode(key);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }

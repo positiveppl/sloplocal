@@ -39,6 +39,7 @@ create table submissions (
   description text check (char_length(description) <= 500),
   category_slug text references categories(slug),
   built_with text[],
+  type text default 'web' check (type in ('web', 'desktop', 'cli', 'plugin', 'mobile')),
   screenshot_url text,
   status text default 'pending' check (status in ('pending', 'approved', 'rejected')),
   reject_reason text,
@@ -51,6 +52,17 @@ create table votes (
   user_id uuid references profiles(id),
   created_at timestamptz default now(),
   unique (submission_id, user_id)
+);
+
+create table api_keys (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade,
+  key_hash text not null unique,
+  key_preview text not null,
+  label text,
+  created_at timestamptz default now(),
+  last_used_at timestamptz,
+  is_active boolean default true
 );
 
 -- ============ VOTE COUNT TRIGGER ============
@@ -134,6 +146,11 @@ alter table votes enable row level security;
 create policy "Public votes" on votes for select using (true);
 create policy "Own vote insert" on votes for insert with check (auth.uid() = user_id);
 create policy "Own vote delete" on votes for delete using (auth.uid() = user_id);
+
+alter table api_keys enable row level security;
+create policy "Own API keys read" on api_keys for select using (auth.uid() = user_id);
+create policy "Own API keys insert" on api_keys for insert with check (auth.uid() = user_id);
+create policy "Own API keys update" on api_keys for update using (auth.uid() = user_id);
 
 -- ============ AFTER RUNNING ============
 -- 1. Enable GitHub OAuth in Authentication > Providers (optional but recommended).

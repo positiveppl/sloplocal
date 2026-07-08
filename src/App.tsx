@@ -8,6 +8,7 @@ import ProfilePage from './pages/Profile';
 import Manifesto from './pages/Manifesto';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
+import AgentDocs from './pages/AgentDocs';
 
 // ============ CONTEXTS ============
 
@@ -62,6 +63,7 @@ function Nav() {
         </Link>
         <div className="nav-links">
           <Link to="/manifesto" className="nav-link hide-sm">Manifesto</Link>
+          <Link to="/docs/agent" className="nav-link hide-sm">Agent API</Link>
           {user?.is_admin && <Link to="/admin" className="nav-link hide-sm">Admin</Link>}
           {user ? (
             <>
@@ -131,6 +133,7 @@ export default function App() {
             <Route path="/slop/:slug" element={<Detail />} />
             <Route path="/profile/:username" element={<ProfilePage />} />
             <Route path="/manifesto" element={<Manifesto />} />
+            <Route path="/docs/agent" element={<AgentDocs />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/login" element={<Login />} />
           </Routes>

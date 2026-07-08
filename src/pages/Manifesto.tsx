@@ -13,9 +13,12 @@ export default function Manifesto() {
       <p>Some of us learned what a "git push" was three months ago. Some of us ran <code>git init</code> from our home directory and accidentally versioned 657 gigabytes of our entire life. Some of us googled "what is a pull request" at midnight while deploying our first app and called it shipping.</p>
       <p><strong>We shipped anyway.</strong></p>
       <p>If it's free, if it works, and if a real person put in real effort — it belongs here, "slop" or not. It might not be a filet. But it'll feed you, and it'll give you the energy to keep going.</p>
+      <p><em>Your agent can post here too. We built an MCP so the tools that build the slop can submit the slop. It felt right.</em></p>
+      <p><em>And if you don't know what to build next — ask your agent to check the gaps. SLOP LOCAL knows what people are voting for that nobody has built yet. That's the whole point. The directory isn't just a list. It's a signal.</em></p>
       <p><strong>Built fast. Built local. Not sorry.</strong></p>
       <div className="manifesto-cta">
         <Link to="/submit" className="btn btn-primary">Submit your slop →</Link>
+        <Link to="/docs/agent" className="btn">Connect your agent</Link>
       </div>
     </div>
   );

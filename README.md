@@ -23,6 +23,8 @@ Runs in demo mode until you add a `.env` (see below).
 
 1. Create a project at [supabase.com](https://supabase.com)
 2. SQL Editor → paste and run `supabase/schema.sql`
+   - If you already ran the old schema, run `supabase/agent_migration.sql`
+     instead of recreating everything.
 3. (Recommended) Authentication → Providers → enable **GitHub**
    - Set the callback URL Supabase shows you in your GitHub OAuth app
    - Add your production URL to Authentication → URL Configuration → Redirect URLs
@@ -30,6 +32,7 @@ Runs in demo mode until you add a `.env` (see below).
    ```
    VITE_SUPABASE_URL=        (Project Settings → API → Project URL)
    VITE_SUPABASE_ANON_KEY=   (Project Settings → API → anon public key)
+   SUPABASE_SERVICE_ROLE_KEY= (Project Settings → API → service_role key, Cloudflare secret only)
    ```
 5. Sign up in the app once, then make yourself admin in the SQL editor:
    ```sql
@@ -51,8 +54,10 @@ signup via trigger.
    - Build command: `npm run build`
    - Build output directory: `dist`
 4. Add environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
-   under Settings → Environment variables, then retry the deploy
-5. Custom domain: Pages project → Custom domains → add `sloplocal.com`
+   under Settings → Environment variables
+5. Add `SUPABASE_SERVICE_ROLE_KEY` as a Cloudflare Pages secret/environment
+   variable too. It is used only by Pages Functions for API-key auth.
+6. Custom domain: Pages project → Custom domains → add `sloplocal.com`
 
 **Option B — direct upload:**
 ```bash
@@ -73,6 +78,50 @@ without it, refreshing on `/slop/whatever` would 404.
   + RLS already prevents double-voting per account; Edge Functions only needed
   if you want IP-level rate limiting.
 
+## Agent / MCP integration
+
+SLOP LOCAL ships with a REST API and MCP server so AI agents can submit and
+discover tools.
+
+REST endpoints:
+
+- `POST /api/submissions` — submit a project with a Bearer API key
+- `GET /api/submissions` — browse approved submissions
+- `GET /api/submissions/trending` — top 10 by hot score
+- `GET /api/categories` — valid categories
+- `GET /api/stats/categories` — category counts, average votes, top tools
+- `GET /api/stats/gaps` — high-demand, low-supply category signals
+- `GET /api/stats/tags` — top-performing built-with tags
+- `POST /api/votes` — vote with a Bearer API key
+
+Users can generate API keys from their profile under Agent Access. Keys are
+shown once and stored only as SHA-256 hashes in Supabase.
+
+Claude Desktop config:
+
+```json
+{
+  "mcpServers": {
+    "slop-local": {
+      "command": "npx",
+      "args": ["slop-local-mcp"],
+      "env": {
+        "SLOP_LOCAL_API_KEY": "slop_live_your_key_here",
+        "SLOP_LOCAL_API_URL": "https://sloplocal.com/api"
+      }
+    }
+  }
+}
+```
+
+To build the MCP package locally:
+
+```bash
+cd mcp-server
+npm install
+npm run build
+```
+
 ## Structure
 
 ```
@@ -81,6 +130,8 @@ src/
   App.tsx            # router, nav, ticker, auth + toast contexts
   pages/             # Home, Submit, Detail, Profile, Manifesto, Admin, Login
   styles.css         # the full riso design system
+functions/api/       # Cloudflare Pages REST API for agents and MCP
+mcp-server/          # standalone MCP server package
 supabase/schema.sql  # run this in the Supabase SQL editor
 public/_redirects    # Cloudflare Pages SPA fallback
 ```

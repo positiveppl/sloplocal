@@ -1,0 +1,24 @@
+{
+  "name": "slop-local-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for SLOP LOCAL — submit and discover vibe-coded apps",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "slop-local-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
