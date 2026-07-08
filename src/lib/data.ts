@@ -291,11 +291,11 @@ export async function fetchPending(): Promise<Slop[]> {
   return (data ?? []).map(mapRow);
 }
 
-export async function reviewSubmission(id: string, status: 'approved' | 'rejected', rejectReason?: string): Promise<void> {
+export async function reviewSubmission(id: string, status: 'approved' | 'rejected', rejectReason?: string): Promise<{ screenshotCaptured?: boolean; screenshotError?: string }> {
   if (DEMO_MODE) {
     const s = demoSlops.find(x => x.id === id);
     if (s) { s.status = status; s.reject_reason = rejectReason ?? null; }
-    return;
+    return {};
   }
   const { data: sessionData } = await supabase!.auth.getSession();
   const token = sessionData.session?.access_token;
@@ -311,6 +311,10 @@ export async function reviewSubmission(id: string, status: 'approved' | 'rejecte
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error ?? 'Review failed.');
+  return {
+    screenshotCaptured: Boolean(data.screenshot_captured),
+    screenshotError: data.screenshot_error,
+  };
 }
 
 export async function banUser(userId: string, reason: string): Promise<void> {

@@ -28,8 +28,12 @@ export default function Admin() {
     }
     setReviewingId(s.id);
     try {
-      await reviewSubmission(s.id, status, reason);
-      toast(status === 'approved' ? 'Artisanal slop approved. It\'s live.' : `${s.name} rejected.`);
+      const result = await reviewSubmission(s.id, status, reason);
+      if (status === 'approved') {
+        toast(result.screenshotCaptured ? 'Artisanal slop approved. Screenshot captured.' : `Artisanal slop approved. ${result.screenshotError ?? 'Screenshot was not captured.'}`);
+      } else {
+        toast(`${s.name} rejected.`);
+      }
       load();
     } catch (error: any) {
       toast(error.message ?? 'Review failed.');
