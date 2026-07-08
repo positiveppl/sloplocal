@@ -382,6 +382,12 @@ export async function sendMagicLink(email: string): Promise<{ ok: boolean; error
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+export async function changePassword(password: string): Promise<{ ok: boolean; error?: string }> {
+  if (DEMO_MODE) return { ok: true };
+  const { error } = await supabase!.auth.updateUser({ password });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
 export async function signInGitHub(): Promise<void> {
   if (DEMO_MODE) { demoSignIn(); return; }
   await supabase!.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: window.location.origin } });

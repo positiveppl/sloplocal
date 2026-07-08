@@ -7,6 +7,7 @@ import {
   Profile,
   Slop,
   apiAccessUnlock,
+  changePassword,
   createApiKey,
   fetchApiKeys,
   fetchByBuilder,
@@ -33,6 +34,9 @@ export default function ProfilePage() {
   const [displayDraft, setDisplayDraft] = useState('');
   const [bioDraft, setBioDraft] = useState('');
   const [profileBusy, setProfileBusy] = useState(false);
+  const [passwordDraft, setPasswordDraft] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [passwordBusy, setPasswordBusy] = useState(false);
 
   useEffect(() => {
     if (!username) return;
@@ -106,6 +110,25 @@ export default function ProfilePage() {
     if (result.profile.username !== username) navigate(`/profile/${result.profile.username}`, { replace: true });
   }
 
+  async function handlePasswordChange() {
+    if (passwordBusy) return;
+    if (passwordDraft.length < 8) { toast('Use at least 8 characters.'); return; }
+    if (passwordDraft !== passwordConfirm) { toast('Passwords do not match.'); return; }
+
+    setPasswordBusy(true);
+    const result = await changePassword(passwordDraft);
+    setPasswordBusy(false);
+
+    if (!result.ok) {
+      toast(result.error ?? 'Could not update password.');
+      return;
+    }
+
+    setPasswordDraft('');
+    setPasswordConfirm('');
+    toast('Password updated.');
+  }
+
   return (
     <div className="wrap">
       <div className="profile-head">
@@ -143,6 +166,23 @@ export default function ProfilePage() {
           </div>
           <button className="btn btn-primary" onClick={handleProfileSave} disabled={profileBusy}>
             {profileBusy ? 'Saving…' : 'Save profile'}
+          </button>
+
+          <div className="settings-divider" />
+          <h2>Change password</h2>
+          <p>Update the password for email sign-in. Magic links will still work.</p>
+          <div className="settings-grid">
+            <div className="field">
+              <label>New password</label>
+              <input type="password" value={passwordDraft} onChange={e => setPasswordDraft(e.target.value)} placeholder="8 characters minimum" />
+            </div>
+            <div className="field">
+              <label>Confirm password</label>
+              <input type="password" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} placeholder="Repeat new password" />
+            </div>
+          </div>
+          <button className="btn" onClick={handlePasswordChange} disabled={passwordBusy || !passwordDraft || !passwordConfirm}>
+            {passwordBusy ? 'Updating…' : 'Update password'}
           </button>
         </section>
       )}
