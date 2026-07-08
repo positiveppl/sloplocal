@@ -134,27 +134,40 @@ create or replace function handle_new_user()
 returns trigger as $$
 declare
   base_username text;
+  candidate_username text;
+  suffix int := 0;
 begin
-  base_username := coalesce(
+  base_username := lower(regexp_replace(coalesce(
     NEW.raw_user_meta_data->>'user_name',
     NEW.raw_user_meta_data->>'preferred_username',
-    split_part(NEW.email, '@', 1)
-  );
-  -- de-dupe: append short random suffix if taken
-  if exists (select 1 from profiles where username = base_username) then
-    base_username := base_username || '-' || substr(md5(random()::text), 1, 4);
+    split_part(coalesce(NEW.email, ''), '@', 1),
+    'builder'
+  ), '[^a-z0-9_]+', '-', 'g'));
+
+  base_username := trim(both '-' from base_username);
+  if base_username = '' then
+    base_username := 'builder';
   end if;
-  insert into profiles (id, username, display_name, avatar_url, github_handle)
+
+  candidate_username := base_username;
+  while exists (select 1 from public.profiles where username = candidate_username) loop
+    suffix := suffix + 1;
+    candidate_username := base_username || '-' || substr(md5(NEW.id::text || suffix::text), 1, 4);
+  end loop;
+
+  insert into public.profiles (id, username, display_name, avatar_url, github_handle)
   values (
     NEW.id,
-    base_username,
+    candidate_username,
     NEW.raw_user_meta_data->>'full_name',
     NEW.raw_user_meta_data->>'avatar_url',
     NEW.raw_user_meta_data->>'user_name'
-  );
+  )
+  on conflict (id) do nothing;
+
   return NEW;
 end;
-$$ language plpgsql security definer;
+$$ language plpgsql security definer set search_path = public, auth;
 
 create trigger on_auth_user_created
 after insert on auth.users
