@@ -97,7 +97,9 @@ async function captureScreenshot(env: Env, submissionId: string, targetUrl: stri
   screenshotEndpoint.searchParams.set('viewport.height', '1000');
   screenshotEndpoint.searchParams.set('waitUntil', 'networkidle2');
 
-  const response = await fetch(screenshotEndpoint.toString());
+  const response = await fetch(screenshotEndpoint.toString(), {
+    headers: env.MICROLINK_API_KEY ? { 'x-api-key': env.MICROLINK_API_KEY } : {},
+  });
   if (!response.ok) return { url: null, captured: false, error: `Microlink returned ${response.status}.` };
 
   const payload = await response.json() as { data?: { screenshot?: { url?: string } } };
