@@ -523,6 +523,10 @@ export function fmtVotes(n: number): string {
   return n >= 1000 ? (n / 1000).toFixed(1) + 'k' : String(n);
 }
 
+export function fmtBuiltWithTag(value: string): string {
+  return `Non-GMO · built with ${value}`;
+}
+
 function randomToken(): string {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);

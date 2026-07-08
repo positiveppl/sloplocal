@@ -3,11 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useToast } from '../App';
 import {
   CATS, CategorySlug, Slop, fetchApproved, fetchMyVotes, fmtVotes,
-  hotScore, isHot, toggleVote,
+  fmtBuiltWithTag, hotScore, isHot, toggleVote,
 } from '../lib/data';
 
 type Sort = 'hot' | 'new' | 'top';
-const SORTS: [Sort, string][] = [['hot', '🔥 Hot'], ['new', '✨ New'], ['top', '↑ Top']];
+const SORTS: [Sort, string][] = [['hot', 'In season'], ['new', 'Fresh drops'], ['top', 'This week\'s yield']];
 
 export default function Home() {
   const { user } = useAuth();
@@ -67,8 +67,8 @@ export default function Home() {
     <div className="wrap">
       <div className="hero">
         <div className="hero-left">
-          <h1>AI-built apps<br />that are actually<br /><span className="accent">good.</span></h1>
-          <p>A curated list of free tools, games, and utilities made by real people using AI. Called slop by some. Used daily by others. You decide.</p>
+          <h1>Fresh slop<br />daily.</h1>
+          <p>A farmers market for free AI-built tools, games, and utilities. Shop local. Know your farmer. Know your slop.</p>
         </div>
         <div className="hero-stats">
           <div className="stat"><div className="stat-num">{stats.tools}</div><div className="stat-label">Tools listed</div></div>
@@ -79,7 +79,7 @@ export default function Home() {
 
       <div className="filter-bar">
         <div className="filter-group">
-          <button className={`chip ${cat === 'all' ? 'active' : ''}`} onClick={() => setCat('all')}>All</button>
+          <button className={`chip ${cat === 'all' ? 'active' : ''}`} onClick={() => setCat('all')}>Today&apos;s harvest</button>
           {(Object.keys(CATS) as CategorySlug[]).map(k => (
             <button key={k} className={`chip ${cat === k ? 'active' : ''}`} onClick={() => setCat(k)}>{CATS[k].label}</button>
           ))}
@@ -92,11 +92,11 @@ export default function Home() {
       </div>
 
       <div className="board-head">
-        <span>#</span><span></span><span>App</span><span>Category</span><span>Votes</span><span>Builder</span>
+        <span>#</span><span></span><span>The slop report</span><span>Category</span><span>Votes</span><span>Builder</span>
       </div>
 
       {!list && <div className="loading">Loading the board…</div>}
-      {list && list.length === 0 && <div className="empty">No slop here yet. Be the first to drop something good.</div>}
+      {list && list.length === 0 && <div className="empty">Nothing in season yet. Be the first to drop something good.</div>}
       {list && list.map((s, i) => (
         <div key={s.id} className="row" onClick={() => navigate(`/slop/${s.slug}`)} role="button" tabIndex={0}
              onKeyDown={e => { if (e.key === 'Enter') navigate(`/slop/${s.slug}`); }}>
@@ -104,8 +104,9 @@ export default function Home() {
           <div className="thumb">{s.screenshot_url ? <img src={s.screenshot_url} alt="" /> : '🥕'}</div>
           <div className="app-info">
             <div className="app-name">{s.name}{isHot(s) && <span className="hot-badge">hot</span>}</div>
+            <div className="listing-badge">Small batch · vibe coded</div>
             <div className="app-tagline">{s.tagline}</div>
-            <div className="built-with">{s.built_with.map(b => <span key={b} className="bw-tag">{b}</span>)}</div>
+            <div className="built-with">{s.built_with.map(b => <span key={b} className="bw-tag">{fmtBuiltWithTag(b)}</span>)}</div>
           </div>
           <div className="cat-tag hide-sm">{CATS[s.category_slug]?.label ?? s.category_slug}</div>
           <div className="row-meta">

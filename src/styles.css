@@ -97,6 +97,7 @@ nav { border-bottom: 2px solid var(--ink); }
 .thumb { width: 60px; height: 40px; background: var(--paper-dark); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; overflow: hidden; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; }
 .app-name { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.listing-badge { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--riso-orange); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 3px; }
 .hot-badge { font-family: 'IBM Plex Mono', monospace; font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--riso-orange); border: 1px solid var(--riso-orange); padding: 2px 5px; font-weight: 500; }
 .status-badge { font-family: 'IBM Plex Mono', monospace; font-size: 8px; text-transform: uppercase; letter-spacing: 0.1em; padding: 2px 5px; border: 1px solid var(--ink-faint); color: var(--ink-faint); }
 .app-tagline { font-size: 12px; color: var(--ink-mid); margin-top: 2px; line-height: 1.4; }

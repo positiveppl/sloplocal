@@ -25,9 +25,15 @@ export const useToast = () => useContext(ToastContext);
 // ============ LAYOUT PIECES ============
 
 const TICKER = [
-  'built fast', 'built local', 'not sorry', 'AI-assisted ≠ low effort',
-  'not a filet — but it\'ll feed you', 'a potluck, not a portfolio',
-  'speed of build ≠ quality of output', 'drop your slop, feed your neighbors',
+  'Fresh slop daily',
+  'Picked at peak vibes',
+  'Know your farmer. Know your slop.',
+  'My agent wrote this. I take full credit.',
+  'Speed of build ≠ quality of output',
+  'Drop your slop, feed your neighbors',
+  'Built fast, built local',
+  'A potluck, not a portfolio',
+  'AI-assisted ≠ low effort',
 ];
 
 function Ticker() {
@@ -58,7 +64,7 @@ function Nav() {
           <span className="logo-carrot">🥕</span>
           <div className="logo-text">
             <div className="wordmark">Slop Local</div>
-            <div className="tagline">free · indie · vibe-coded</div>
+            <div className="tagline">Fresh slop daily.</div>
           </div>
         </Link>
         <div className="nav-links">
@@ -84,14 +90,14 @@ function Footer() {
   return (
     <footer>
       <div className="wrap footer-inner">
-        <div className="footer-motto">🥕 Slop Local — built fast · built local · not sorry</div>
+        <div className="footer-motto">Organic output, artificial intelligence.</div>
         <div className="footer-agent">
           <span className="footer-agent-icon">⬡</span>
           <span>Agent-native</span>
           <span className="footer-divider">·</span>
           <Link to="/docs/agent" className="footer-agent-link">slop-local-mcp on npm →</Link>
         </div>
-        <div className="footer-motto">sloplocal.com · est. 2026</div>
+        <div className="footer-motto">Single origin · solo builder.</div>
       </div>
     </footer>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth, useToast } from '../App';
-import { CATS, Slop, fetchByBuilder, fetchBySlug, fetchMyVotes, flagSubmission, fmtVotes, toggleVote } from '../lib/data';
+import { CATS, Slop, fetchByBuilder, fetchBySlug, fetchMyVotes, flagSubmission, fmtBuiltWithTag, fmtVotes, toggleVote } from '../lib/data';
 
 const FLAG_REASONS = [
   ['spam', 'It’s spam'],
@@ -81,11 +81,12 @@ export default function Detail() {
         </button>
       </div>
       {slop.status !== 'approved' && <span className="status-badge">{slop.status}</span>}
+      <div className="listing-badge">Small batch · vibe coded</div>
       <div className="detail-tagline">{slop.tagline}</div>
       <div className="detail-meta">
         <span className="cat-tag">{CATS[slop.category_slug]?.full ?? slop.category_slug}</span>
         <span className="builder">by <Link className="handle" to={`/profile/${slop.builder_username}`}>@{slop.builder_username}</Link></span>
-        <span className="built-with">{slop.built_with.map(b => <span key={b} className="bw-tag">{b}</span>)}</span>
+        <span className="built-with">{slop.built_with.map(b => <span key={b} className="bw-tag">{fmtBuiltWithTag(b)}</span>)}</span>
         <a className="btn" style={{ marginLeft: 'auto' }} href={slop.url} target="_blank" rel="noopener noreferrer">Visit site →</a>
       </div>
       {slop.description && <div className="detail-desc">{slop.description}</div>}
@@ -118,6 +119,7 @@ export default function Detail() {
               <div className="thumb">{m.screenshot_url ? <img src={m.screenshot_url} alt="" /> : '🥕'}</div>
               <div className="app-info">
                 <div className="app-name">{m.name}</div>
+                <div className="listing-badge">Small batch · vibe coded</div>
                 <div className="app-tagline">{m.tagline}</div>
               </div>
               <div className="vote-btn" style={{ textAlign: 'center' }}>▲ {fmtVotes(m.vote_count)}</div>

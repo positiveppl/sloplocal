@@ -26,7 +26,7 @@ export default function Admin() {
       if (reason === undefined) return; // cancelled
     }
     await reviewSubmission(s.id, status, reason);
-    toast(status === 'approved' ? `${s.name} is live on the board.` : `${s.name} rejected.`);
+    toast(status === 'approved' ? 'Artisanal slop approved. It\'s live.' : `${s.name} rejected.`);
     load();
   }
 
