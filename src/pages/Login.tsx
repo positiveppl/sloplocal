@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useToast } from '../App';
-import { DEMO_MODE, sanitizeUsername, signInEmail, signInGitHub, signUpEmail } from '../lib/data';
+import { DEMO_MODE, sanitizeUsername, sendMagicLink, signInEmail, signInGitHub, signUpEmail } from '../lib/data';
 
 export default function Login() {
   const { refresh } = useAuth();
@@ -22,7 +22,8 @@ export default function Login() {
     if (mode === 'up' && !cleanHandle) { setError('Pick a public handle. No email addresses on the board.'); return; }
     if (mode === 'up' && handle.includes('@')) { setError('Use a handle, not an email address.'); return; }
     setBusy(true);
-    const res = mode === 'in' ? await signInEmail(email, password) : await signUpEmail(email, password, cleanHandle);
+    const cleanEmail = email.trim();
+    const res = mode === 'in' ? await signInEmail(cleanEmail, password) : await signUpEmail(cleanEmail, password, cleanHandle);
     setBusy(false);
     if (!res.ok) { setError(res.error ?? 'That didn\'t work.'); return; }
     await refresh();
@@ -34,6 +35,16 @@ export default function Login() {
     await signInGitHub();
     if (DEMO_MODE) { await refresh(); toast('Signed in (demo).'); navigate('/'); }
     // In live mode, OAuth redirects away and back.
+  }
+
+  async function handleMagicLink() {
+    setError('');
+    if (!email.trim()) { setError('Enter your email first.'); return; }
+    setBusy(true);
+    const res = await sendMagicLink(email);
+    setBusy(false);
+    if (!res.ok) { setError(res.error ?? 'Could not send sign-in link.'); return; }
+    toast('Check your email for a sign-in link.');
   }
 
   return (
@@ -67,6 +78,12 @@ export default function Login() {
       <button className="btn btn-primary" style={{ width: '100%', padding: 13 }} disabled={busy} onClick={handleEmail}>
         {busy ? 'One sec…' : mode === 'in' ? 'Sign in →' : 'Create account →'}
       </button>
+
+      {mode === 'in' && (
+        <button className="nav-link" style={{ width: '100%', marginTop: 14, textDecoration: 'underline' }} disabled={busy} onClick={handleMagicLink}>
+          Email me a sign-in link
+        </button>
+      )}
 
       <p className="form-note">
         {mode === 'in' ? 'No account yet? ' : 'Already have one? '}

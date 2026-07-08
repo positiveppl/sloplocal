@@ -358,7 +358,7 @@ async function profileForUser(user: User): Promise<Profile | null> {
 
 export async function signInEmail(email: string, password: string): Promise<{ ok: boolean; error?: string }> {
   if (DEMO_MODE) { demoSignIn(); return { ok: true }; }
-  const { error } = await supabase!.auth.signInWithPassword({ email, password });
+  const { error } = await supabase!.auth.signInWithPassword({ email: email.trim(), password });
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
@@ -366,9 +366,18 @@ export async function signUpEmail(email: string, password: string, username?: st
   if (DEMO_MODE) { demoSignIn(); return { ok: true }; }
   const cleanUsername = sanitizeUsername(username ?? '');
   const { error } = await supabase!.auth.signUp({
-    email,
+    email: email.trim(),
     password,
     options: cleanUsername ? { data: { user_name: cleanUsername, preferred_username: cleanUsername } } : undefined,
+  });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function sendMagicLink(email: string): Promise<{ ok: boolean; error?: string }> {
+  if (DEMO_MODE) { demoSignIn(); return { ok: true }; }
+  const { error } = await supabase!.auth.signInWithOtp({
+    email: email.trim(),
+    options: { emailRedirectTo: window.location.origin },
   });
   return error ? { ok: false, error: error.message } : { ok: true };
 }
