@@ -1,5 +1,14 @@
 import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 
+declare global {
+  interface Window {
+    __SLOPLOCAL_ENV__?: {
+      VITE_SUPABASE_URL?: string;
+      VITE_SUPABASE_ANON_KEY?: string;
+    };
+  }
+}
+
 // ============ TYPES ============
 
 export type CategorySlug = 'tools' | 'creative' | 'games' | 'productivity' | 'weird';
@@ -59,8 +68,9 @@ export interface ApiKey {
 
 // ============ SUPABASE CLIENT (or demo mode) ============
 
-const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const anon = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+const runtimeEnv = typeof window !== 'undefined' ? window.__SLOPLOCAL_ENV__ : undefined;
+const url = (import.meta.env.VITE_SUPABASE_URL || runtimeEnv?.VITE_SUPABASE_URL) as string | undefined;
+const anon = (import.meta.env.VITE_SUPABASE_ANON_KEY || runtimeEnv?.VITE_SUPABASE_ANON_KEY) as string | undefined;
 
 export const DEMO_MODE = !url || !anon;
 export const supabase: SupabaseClient | null = DEMO_MODE ? null : createClient(url!, anon!);
