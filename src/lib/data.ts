@@ -12,7 +12,7 @@ export const CATS: Record<CategorySlug, { label: string; full: string }> = {
   weird:        { label: '🧪 Weird',        full: '🧪 Weird & Niche' },
 };
 
-export const BUILT_WITH_OPTIONS = ['Claude', 'Cursor', 'v0', 'Replit', 'Lovable', 'Bolt', 'GPT-4', 'Other'];
+export const BUILT_WITH_OPTIONS = ['Codex', 'Claude', 'Cursor', 'v0', 'Replit', 'Lovable', 'Bolt', 'GPT-4', 'Other'];
 
 export interface Slop {
   id: string;

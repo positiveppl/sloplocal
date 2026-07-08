@@ -18,7 +18,7 @@ export const tools: Tool[] = [
         tagline: { type: 'string', description: 'One-line description, max 120 chars' },
         category: { type: 'string', enum: categoryEnum },
         type: { type: 'string', enum: typeEnum },
-        built_with: { type: 'array', items: { type: 'string' } },
+        built_with: { type: 'array', items: { type: 'string' }, description: 'AI tools used: Codex, Claude, Cursor, v0, Replit, Lovable, Bolt, GPT-4, etc' },
         description: { type: 'string', description: 'Optional longer description, max 500 chars' },
         builder_handle: { type: 'string', description: 'Your @handle to credit on the listing' }
       },
