@@ -257,11 +257,20 @@ export async function submitSlop(input: {
     return { ok: false, error: duplicate.status === 'approved' ? 'This tool is already listed on SLOP LOCAL.' : 'This URL has already been submitted and is pending review.' };
   }
   await recordSubmissionAttempt(input.submitter.id, 'web');
-  const { error } = await supabase!.from('submissions').insert({
-    name: input.name, slug, url: normalizedUrl, normalized_url: normalizedUrl, tagline: input.tagline,
+  const baseInsert = {
+    name: input.name, slug, url: normalizedUrl, tagline: input.tagline,
     description: input.description || null, category_slug: input.category_slug,
-    built_with: input.built_with, submitter_id: input.submitter.id, submitted_via: 'web',
+    built_with: input.built_with, submitter_id: input.submitter.id,
+  };
+  let { error } = await supabase!.from('submissions').insert({
+    ...baseInsert,
+    normalized_url: normalizedUrl,
+    submitted_via: 'web',
   });
+  if (isMissingColumn(error, 'normalized_url') || isMissingColumn(error, 'submitted_via')) {
+    const fallback = await supabase!.from('submissions').insert(baseInsert);
+    error = fallback.error;
+  }
   if (error) {
     if (error.code === '23505') return { ok: false, error: 'That one\'s already been submitted.' };
     return { ok: false, error: error.message };
@@ -471,11 +480,19 @@ async function isBanned(userId: string): Promise<boolean> {
 }
 
 async function findDuplicateUrl(normalizedUrl: string): Promise<{ id: string; status: string } | null> {
-  const { data } = await supabase!
+  let { data, error } = await supabase!
     .from('submissions')
     .select('id, status')
     .eq('normalized_url', normalizedUrl)
     .maybeSingle();
+  if (isMissingColumn(error, 'normalized_url')) {
+    const fallback = await supabase!
+      .from('submissions')
+      .select('id, status')
+      .eq('url', normalizedUrl)
+      .maybeSingle();
+    data = fallback.data;
+  }
   return data as { id: string; status: string } | null;
 }
 
@@ -493,6 +510,10 @@ async function checkSubmissionLimit(userId: string, source: 'web' | 'api'): Prom
 
 async function recordSubmissionAttempt(userId: string, source: 'web' | 'api'): Promise<void> {
   await supabase!.from('submission_attempts').insert({ user_id: userId, source });
+}
+
+function isMissingColumn(error: any, column: string): boolean {
+  return Boolean(error?.message?.includes(`'${column}'`) || error?.message?.includes(`.${column}`) || error?.message?.includes(` ${column} `));
 }
 
 function mapRow(row: any): Slop {

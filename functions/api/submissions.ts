@@ -86,35 +86,57 @@ export async function onRequestPost({ request, env }: Context) {
       }, limit, { status: 429 });
     }
 
-    const { data: existing, error: existingError } = await supabase
+    let { data: existing, error: existingError } = await supabase
       .from('submissions')
       .select('id, status')
       .eq('normalized_url', urlCheck.normalizedUrl)
       .maybeSingle();
+    if (isMissingColumn(existingError, 'normalized_url')) {
+      const fallback = await supabase
+        .from('submissions')
+        .select('id, status')
+        .eq('url', urlCheck.normalizedUrl)
+        .maybeSingle();
+      existing = fallback.data;
+      existingError = fallback.error;
+    }
     if (existingError) return json({ error: existingError.message }, { status: 400 });
     if (existing) {
       return json({ error: existing.status === 'approved' ? 'This tool is already listed on SLOP LOCAL.' : 'This URL has already been submitted and is pending review.' }, { status: 409 });
     }
 
     await recordSubmissionAttempt(env, apiUser.userId, 'api');
-    const { data, error } = await supabase
+    const baseInsert = {
+      submitter_id: apiUser.userId,
+      name,
+      slug,
+      url: urlCheck.normalizedUrl,
+      tagline,
+      description: description || null,
+      category_slug: category,
+      built_with: builtWith,
+      status: 'pending',
+    };
+    let { data, error } = await supabase
       .from('submissions')
       .insert({
-        submitter_id: apiUser.userId,
-        name,
-        slug,
-        url: urlCheck.normalizedUrl,
+        ...baseInsert,
         normalized_url: urlCheck.normalizedUrl,
-        tagline,
-        description: description || null,
-        category_slug: category,
-        built_with: builtWith,
         type,
         submitted_via: 'api',
-        status: 'pending',
       })
       .select('id, status')
       .single();
+
+    if (isMissingColumn(error, 'normalized_url') || isMissingColumn(error, 'submitted_via') || isMissingColumn(error, 'type')) {
+      const fallback = await supabase
+        .from('submissions')
+        .insert(baseInsert)
+        .select('id, status')
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       if (error.code === '23505') return json({ error: 'That project already appears to be submitted.' }, { status: 409 });
@@ -129,4 +151,8 @@ export async function onRequestPost({ request, env }: Context) {
   } catch (error: any) {
     return json({ error: error.message ?? 'Unable to create submission.' }, { status: 500 });
   }
+}
+
+function isMissingColumn(error: any, column: string): boolean {
+  return Boolean(error?.message?.includes(`'${column}'`) || error?.message?.includes(`.${column}`) || error?.message?.includes(` ${column} `));
 }
