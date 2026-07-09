@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useToast } from '../App';
 import {
   CATS, CategorySlug, Slop, fetchApproved, fetchMyVotes, fmtVotes,
-  fmtBuiltWithTag, hotScore, isHot, toggleVote,
+  fmtBuiltWithTags, hotScore, isHot, toggleVote,
 } from '../lib/data';
 
 type Sort = 'hot' | 'new' | 'top';
@@ -106,7 +106,7 @@ export default function Home() {
             <div className="app-name">{s.name}{isHot(s) && <span className="hot-badge">hot</span>}</div>
             <div className="listing-badge">Small batch · vibe coded</div>
             <div className="app-tagline">{s.tagline}</div>
-            <div className="built-with">{s.built_with.map(b => <span key={b} className="bw-tag">{fmtBuiltWithTag(b)}</span>)}</div>
+            <div className="built-with">{fmtBuiltWithTags(s.built_with).map(tag => <span key={tag} className="bw-tag">{tag}</span>)}</div>
           </div>
           <div className="cat-tag hide-sm">{CATS[s.category_slug]?.label ?? s.category_slug}</div>
           <div className="row-meta">

@@ -600,6 +600,11 @@ export function fmtBuiltWithTag(value: string): string {
   return `Non-GMO · built with ${value}`;
 }
 
+export function fmtBuiltWithTags(values: string[]): string[] {
+  if (values.length <= 1) return values.map(fmtBuiltWithTag);
+  return [`Non-GMO · built with ${values.join(' + ')}`];
+}
+
 function randomToken(): string {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);

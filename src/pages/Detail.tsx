@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth, useToast } from '../App';
-import { CATS, Slop, fetchByBuilder, fetchBySlug, fetchMyVotes, flagSubmission, fmtBuiltWithTag, fmtVotes, toggleVote } from '../lib/data';
+import { CATS, Slop, fetchByBuilder, fetchBySlug, fetchMyVotes, flagSubmission, fmtBuiltWithTags, fmtVotes, toggleVote } from '../lib/data';
 
 const FLAG_REASONS = [
   ['spam', 'It’s spam'],
@@ -86,7 +86,7 @@ export default function Detail() {
       <div className="detail-meta">
         <span className="cat-tag">{CATS[slop.category_slug]?.full ?? slop.category_slug}</span>
         <span className="builder">by <Link className="handle" to={`/profile/${slop.builder_username}`}>@{slop.builder_username}</Link></span>
-        <span className="built-with">{slop.built_with.map(b => <span key={b} className="bw-tag">{fmtBuiltWithTag(b)}</span>)}</span>
+        <span className="built-with">{fmtBuiltWithTags(slop.built_with).map(tag => <span key={tag} className="bw-tag">{tag}</span>)}</span>
         <a className="btn" style={{ marginLeft: 'auto' }} href={slop.url} target="_blank" rel="noopener noreferrer">Visit site →</a>
       </div>
       {slop.description && <div className="detail-desc">{slop.description}</div>}

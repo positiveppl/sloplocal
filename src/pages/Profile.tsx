@@ -12,7 +12,7 @@ import {
   fetchApiKeys,
   fetchByBuilder,
   fetchProfile,
-  fmtBuiltWithTag,
+  fmtBuiltWithTags,
   fmtVotes,
   revokeApiKey,
   sanitizeUsername,
@@ -240,7 +240,7 @@ export default function ProfilePage() {
             <div className="app-name">{s.name}</div>
             <div className="listing-badge">Small batch · vibe coded</div>
             <div className="app-tagline">{s.tagline}</div>
-            <div className="built-with">{s.built_with.map(b => <span key={b} className="bw-tag">{fmtBuiltWithTag(b)}</span>)}</div>
+            <div className="built-with">{fmtBuiltWithTags(s.built_with).map(tag => <span key={tag} className="bw-tag">{tag}</span>)}</div>
           </div>
           <div className="cat-tag hide-sm">{CATS[s.category_slug]?.label ?? s.category_slug}</div>
           <div className="vote-btn" style={{ textAlign: 'center' }}>▲ {fmtVotes(s.vote_count)}</div>
