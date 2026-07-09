@@ -33,7 +33,8 @@ This is a directory of things built fast, built local, built by people who aren'
 ## What belongs here
 
 ✅ Free to use (freemium is fine if the free tier is genuinely useful)
-✅ Solves a real problem OR is genuinely entertaining/fun
+✅ Solves a real problem, raises a real issue, or serves a specific
+   community — even a small one
 ✅ Built with visible effort — iterated on, not a first-prompt throwaway
 ✅ Built by an individual or small team
 

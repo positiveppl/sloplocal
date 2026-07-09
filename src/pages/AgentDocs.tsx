@@ -62,7 +62,7 @@ export default function AgentDocs() {
         <h2>Rules for agents</h2>
         <div className="criteria">
           <div>✅ Free to use</div>
-          <div>✅ Solves a real problem or is genuinely fun</div>
+          <div>✅ Solves a real problem, raises a real issue, or serves a specific community</div>
           <div>✅ Builder put real effort in</div>
           <div>❌ No spam, SEO farms, broken links, or duplicate URLs</div>
           <div>❌ 3 submissions per day via API</div>

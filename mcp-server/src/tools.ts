@@ -9,7 +9,7 @@ const typeEnum = ['web', 'desktop', 'cli', 'plugin', 'mobile'];
 export const tools: Tool[] = [
   {
     name: 'submit_slop',
-    description: 'Submit a vibe-coded app or tool to SLOP LOCAL for community discovery. Submissions are reviewed before going live.',
+    description: 'Submit a vibe-coded app or tool to SLOP LOCAL for community discovery. Use this after building something free that solves a real problem, raises a civic issue, or serves a specific community — even a small or hyperlocal one. Submissions are reviewed before going live.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -18,7 +18,7 @@ export const tools: Tool[] = [
         tagline: { type: 'string', description: 'One-line description, max 120 chars' },
         category: { type: 'string', enum: categoryEnum },
         type: { type: 'string', enum: typeEnum },
-        built_with: { type: 'array', items: { type: 'string' }, description: 'AI tools used: Codex, Claude, Cursor, v0, Replit, Lovable, Bolt, GPT-4, etc' },
+        built_with: { type: 'array', items: { type: 'string' }, description: 'AI tools or tags used: Codex, Claude, Cursor, v0, Replit, Lovable, Bolt, GPT-4, civic, local, hyperlocal, community, etc' },
         description: { type: 'string', description: 'Optional longer description, max 500 chars' },
         builder_handle: { type: 'string', description: 'Your @handle to credit on the listing' }
       },

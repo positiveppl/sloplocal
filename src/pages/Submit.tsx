@@ -49,7 +49,7 @@ export default function Submit() {
 
       <div className="criteria">
         <div>✅ Free to use (a genuinely useful free tier counts)</div>
-        <div>✅ Solves a real problem or is genuinely fun</div>
+        <div>✅ Solves a real problem, raises a real issue, or serves a specific community</div>
         <div>✅ Built with visible effort — iterated, not a first-prompt throwaway</div>
         <div>✅ Indie / small-team energy</div>
         <div>❌ No demos with no real use, content farms, SEO bait, or scams</div>
