@@ -13,6 +13,7 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { background: var(--paper); }
+html, body { overflow-x: hidden; }
 body {
   font-family: 'Space Grotesk', sans-serif;
   background: var(--paper);
@@ -74,7 +75,7 @@ nav { border-bottom: 2px solid var(--ink); background: var(--paper); position: s
 
 /* ============ TICKER ============ */
 .ticker { background: var(--riso-green); border-bottom: 2px solid var(--ink); overflow: hidden; white-space: nowrap; padding: 7px 0; }
-.ticker-track { display: inline-block; animation: ticker 32s linear infinite; }
+.ticker-track { display: inline-block; animation: ticker 35.2s linear infinite; }
 .ticker span { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--paper); text-transform: uppercase; letter-spacing: 0.14em; padding: 0 28px; }
 @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) { .ticker-track { animation: none; } }
@@ -274,6 +275,7 @@ footer { border-top: 2px solid var(--ink); background: var(--paper); padding: 24
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 640px) {
+  nav .wrap { padding-left: 28px; padding-right: 28px; }
   .nav-inner { padding: 12px 0; }
   .nav-right { display: none; }
   .hamburger { display: flex; }

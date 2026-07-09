@@ -368,7 +368,10 @@ export async function signUpEmail(email: string, password: string, username?: st
   const { error } = await supabase!.auth.signUp({
     email: email.trim(),
     password,
-    options: cleanUsername ? { data: { user_name: cleanUsername, preferred_username: cleanUsername } } : undefined,
+    options: {
+      emailRedirectTo: window.location.origin,
+      ...(cleanUsername ? { data: { user_name: cleanUsername, preferred_username: cleanUsername } } : {}),
+    },
   });
   return error ? { ok: false, error: error.message } : { ok: true };
 }
