@@ -2,6 +2,7 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 const API_BASE = (process.env.SLOP_LOCAL_API_URL ?? 'https://sloplocal.com/api').replace(/\/$/, '');
 const API_KEY = process.env.SLOP_LOCAL_API_KEY ?? '';
+const ADMIN_TOKEN = process.env.SLOP_LOCAL_ADMIN_TOKEN ?? '';
 
 const categoryEnum = ['tools', 'creative', 'games', 'productivity', 'weird'];
 const typeEnum = ['web', 'desktop', 'cli', 'plugin', 'mobile'];
@@ -83,6 +84,29 @@ export const tools: Tool[] = [
         limit: { type: 'number', default: 10 }
       }
     }
+  },
+  {
+    name: 'get_pending_submissions',
+    description: 'Admin-only: fetch pending SLOP LOCAL submissions for moderation triage.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', default: 25 },
+        offset: { type: 'number', default: 0 }
+      }
+    }
+  },
+  {
+    name: 'get_flagged_submissions',
+    description: 'Admin-only: fetch flagged SLOP LOCAL submissions for moderation triage.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', enum: ['pending', 'approved', 'rejected'] },
+        limit: { type: 'number', default: 25 },
+        offset: { type: 'number', default: 0 }
+      }
+    }
   }
 ];
 
@@ -103,6 +127,10 @@ export async function handleTool(name: string, args: Record<string, any>) {
         return getMarketGaps(args);
       case 'get_trending_tags':
         return getTrendingTags(args);
+      case 'get_pending_submissions':
+        return getAdminSubmissions('/admin/pending', args, 'Pending submissions');
+      case 'get_flagged_submissions':
+        return getAdminSubmissions('/admin/flagged', args, 'Flagged submissions');
       default:
         return text(`Unknown tool: ${name}`);
     }
@@ -183,6 +211,37 @@ async function getTrendingTags(args: Record<string, any>) {
     `${i + 1}. ${t.tag} — used in ${t.submission_count} submissions, avg ${t.avg_votes} votes`
   ).join('\n');
   return text(tags ? `Top performing tools on SLOP LOCAL:\n\n${tags}` : 'No built-with tag stats available yet.');
+}
+
+async function getAdminSubmissions(path: string, args: Record<string, any>, title: string) {
+  if (!ADMIN_TOKEN) return text('Set SLOP_LOCAL_ADMIN_TOKEN to a signed-in Supabase admin access token before using admin moderation tools.');
+  const params = new URLSearchParams({
+    limit: String(args.limit ?? 25),
+    offset: String(args.offset ?? 0),
+  });
+  if (args.status) params.set('status', String(args.status));
+
+  const data = await request(`${path}?${params}`, {
+    headers: { authorization: `Bearer ${ADMIN_TOKEN}` },
+  });
+  const list = data.submissions.map((s: any, i: number) => {
+    const accountability = [
+      s.submitter_agreed_to_terms ? 'signup attested' : 'missing signup attestation',
+      s.attested ? 'submission attested' : 'missing submission attestation',
+      `${s.flag_count ?? 0} flag${s.flag_count === 1 ? '' : 's'}`,
+    ].join(' · ');
+
+    return [
+      `${i + 1}. ${s.name} (${s.status}) — ${s.url}`,
+      `   Builder: @${s.builder_username} · ${s.submitted_via ?? 'web'} · ${accountability}`,
+      `   Category: ${s.category_slug} · Built with: ${(s.built_with ?? []).join(', ') || 'none'}`,
+      `   Tagline: ${s.tagline}`,
+      s.description ? `   Description: ${s.description}` : '',
+      `   ID: ${s.id}`,
+    ].filter(Boolean).join('\n');
+  }).join('\n\n');
+
+  return text(list ? `${title} (${data.total} total):\n\n${list}` : `${title}: none found.`);
 }
 
 async function request(path: string, init?: RequestInit) {

@@ -308,13 +308,16 @@ export async function submitSlop(input: {
 
 export async function fetchPending(): Promise<Slop[]> {
   if (DEMO_MODE) return demoSlops.filter(s => s.status === 'pending');
-  const { data, error } = await supabase!
-    .from('submissions')
-    .select('*, profiles:submitter_id (username, avatar_url, agreed_to_terms, agreed_to_terms_at)')
-    .eq('status', 'pending')
-    .order('created_at', { ascending: true });
-  if (error) throw error;
-  return (data ?? []).map(mapRow);
+  const { data: sessionData } = await supabase!.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error('Sign in again before loading the review queue.');
+
+  const res = await fetch('/api/admin/pending', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error ?? 'Unable to load pending submissions.');
+  return data.submissions ?? [];
 }
 
 export async function reviewSubmission(id: string, status: 'approved' | 'rejected', rejectReason?: string): Promise<{ screenshotCaptured?: boolean; screenshotError?: string }> {

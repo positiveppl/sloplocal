@@ -1,4 +1,4 @@
-import { Env, adminSupabase, handleOptions, json, publicSupabase } from '../_shared';
+import { Env, adminSupabase, handleOptions, json, validateAdmin } from '../_shared';
 
 type Context = EventContext<Env, string, unknown>;
 
@@ -69,23 +69,6 @@ export async function onRequestPost({ request, env }: Context) {
   } catch (error: any) {
     return json({ error: error.message ?? 'Unable to review submission.' }, { status: 500 });
   }
-}
-
-async function validateAdmin(request: Request, env: Env): Promise<string | null> {
-  const auth = request.headers.get('authorization');
-  if (!auth?.startsWith('Bearer ')) return null;
-  const token = auth.slice(7).trim();
-
-  const { data: userData, error: userError } = await publicSupabase(env).auth.getUser(token);
-  if (userError || !userData.user) return null;
-
-  const { data: profile } = await adminSupabase(env)
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', userData.user.id)
-    .maybeSingle();
-
-  return profile?.is_admin ? userData.user.id : null;
 }
 
 async function captureScreenshot(env: Env, submissionId: string, targetUrl: string, name: string): Promise<ScreenshotResult> {

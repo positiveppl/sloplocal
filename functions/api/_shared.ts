@@ -119,6 +119,51 @@ export async function validateApiKeyProfile(request: Request, env: Env): Promise
   };
 }
 
+export async function validateAdmin(request: Request, env: Env): Promise<string | null> {
+  const auth = request.headers.get('authorization');
+  if (!auth?.startsWith('Bearer ')) return null;
+  const token = auth.slice(7).trim();
+
+  const { data: userData, error: userError } = await publicSupabase(env).auth.getUser(token);
+  if (userError || !userData.user) return null;
+
+  const { data: profile } = await adminSupabase(env)
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', userData.user.id)
+    .maybeSingle();
+
+  return profile?.is_admin ? userData.user.id : null;
+}
+
+export function mapAdminSubmission(row: any) {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    url: row.url,
+    tagline: row.tagline,
+    description: row.description,
+    category_slug: row.category_slug,
+    built_with: row.built_with ?? [],
+    type: row.type ?? 'web',
+    submitted_via: row.submitted_via ?? 'web',
+    screenshot_url: row.screenshot_url,
+    status: row.status,
+    reject_reason: row.reject_reason,
+    vote_count: row.vote_count ?? 0,
+    flag_count: row.flag_count ?? 0,
+    attested: row.attested ?? false,
+    attested_at: row.attested_at ?? null,
+    created_at: row.created_at,
+    submitter_id: row.submitter_id,
+    builder_username: row.profiles?.username ?? 'unknown',
+    builder_avatar: row.profiles?.avatar_url ?? null,
+    submitter_agreed_to_terms: row.profiles?.agreed_to_terms ?? false,
+    submitter_agreed_to_terms_at: row.profiles?.agreed_to_terms_at ?? null,
+  };
+}
+
 export function normalizeUrl(rawUrl: string): string {
   const u = new URL(normalizeUrlInput(rawUrl));
   return `${u.protocol}//${u.hostname}${u.pathname}`.replace(/\/$/, '').toLowerCase();
