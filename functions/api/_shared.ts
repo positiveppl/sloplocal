@@ -6,6 +6,8 @@ export type Env = {
   SUPABASE_SERVICE_ROLE_KEY?: string;
   MICROLINK_API_KEY?: string;
   SLOP_SCREENSHOT_BUCKET?: string;
+  WORKER_URL?: string;
+  WORKER_SECRET?: string;
 };
 
 export const CATEGORIES = ['tools', 'creative', 'games', 'productivity', 'weird'] as const;

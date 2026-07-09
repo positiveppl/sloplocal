@@ -89,47 +89,29 @@ async function validateAdmin(request: Request, env: Env): Promise<string | null>
 }
 
 async function captureScreenshot(env: Env, submissionId: string, targetUrl: string, name: string): Promise<ScreenshotResult> {
-  const screenshotEndpoint = new URL('https://api.microlink.io/');
-  screenshotEndpoint.searchParams.set('url', targetUrl);
-  screenshotEndpoint.searchParams.set('screenshot', 'true');
-  screenshotEndpoint.searchParams.set('meta', 'false');
-  screenshotEndpoint.searchParams.set('viewport.width', '1440');
-  screenshotEndpoint.searchParams.set('viewport.height', '1000');
-  screenshotEndpoint.searchParams.set('waitUntil', 'networkidle2');
-
-  const response = await fetch(screenshotEndpoint.toString(), {
-    headers: env.MICROLINK_API_KEY ? { 'x-api-key': env.MICROLINK_API_KEY } : {},
-  });
-  if (!response.ok) return { url: null, captured: false, error: `Microlink returned ${response.status}.` };
-
-  const payload = await response.json() as { data?: { screenshot?: { url?: string } } };
-  const imageUrl = payload.data?.screenshot?.url;
-  if (!imageUrl) return { url: null, captured: false, error: 'Microlink did not return a screenshot URL.' };
-
-  const imageResponse = await fetch(imageUrl);
-  if (!imageResponse.ok) {
-    return { url: imageUrl, captured: true, error: `Screenshot image returned ${imageResponse.status}; using Microlink URL.` };
+  if (!env.WORKER_URL || !env.WORKER_SECRET) {
+    return { url: null, captured: false, error: 'Screenshot worker is not configured.' };
   }
 
-  const bytes = await imageResponse.arrayBuffer();
-  if (bytes.byteLength === 0) return { url: imageUrl, captured: true, error: 'Screenshot image was empty; using Microlink URL.' };
+  const response = await fetch(`${env.WORKER_URL.replace(/\/$/, '')}/approve-screenshot`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-worker-secret': env.WORKER_SECRET,
+    },
+    body: JSON.stringify({ submissionId, url: targetUrl, name }),
+  });
 
-  const bucket = env.SLOP_SCREENSHOT_BUCKET || 'screenshots';
-  const supabase = adminSupabase(env);
-  await supabase.storage.createBucket(bucket, { public: true }).catch(() => {});
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '');
+    return {
+      url: null,
+      captured: false,
+      error: `Screenshot worker returned ${response.status}${detail ? `: ${detail}` : '.'}`,
+    };
+  }
 
-  const safeName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'submission';
-  const contentType = imageResponse.headers.get('content-type') || 'image/png';
-  const extension = contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg' : 'png';
-  const path = `${submissionId}/${safeName}.${extension}`;
-  const { error } = await supabase.storage
-    .from(bucket)
-    .upload(path, bytes, {
-      contentType,
-      upsert: true,
-      cacheControl: '31536000',
-    });
-
-  if (error) return { url: imageUrl, captured: true, error: `Storage upload failed: ${error.message}` };
-  return { url: supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl, captured: true };
+  const payload = await response.json() as { screenshotUrl?: string };
+  if (!payload.screenshotUrl) return { url: null, captured: false, error: 'Screenshot worker did not return a URL.' };
+  return { url: payload.screenshotUrl, captured: true };
 }
