@@ -46,7 +46,6 @@ nav { border-bottom: 2px solid var(--ink); }
 .nav-links { display: flex; align-items: center; gap: 8px; }
 .nav-link { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; padding: 9px 14px; cursor: pointer; background: none; border: none; color: var(--ink-mid); }
 .nav-link:hover { color: var(--riso-orange); }
-.mobile-auth { display: none; }
 
 .btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 16px; cursor: pointer; background: none; border: 1.5px solid var(--ink); color: var(--ink); border-radius: 0; display: inline-block; }
 .btn:hover { background: var(--paper-dark); }
@@ -56,6 +55,7 @@ nav { border-bottom: 2px solid var(--ink); }
 .btn-primary:active { transform: translate(2px, 2px); box-shadow: none; }
 .btn-danger { border-color: var(--riso-orange); color: var(--riso-orange); }
 .btn-danger:hover { background: var(--riso-orange-pale); }
+.mobile-auth { display: none; }
 
 /* ============ TICKER ============ */
 .ticker { background: var(--riso-green); border-bottom: 2px solid var(--ink); overflow: hidden; white-space: nowrap; padding: 7px 0; }
