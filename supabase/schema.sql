@@ -13,6 +13,8 @@ create table profiles (
   is_admin boolean default false,
   is_banned boolean default false,
   ban_reason text,
+  agreed_to_terms boolean default false,
+  agreed_to_terms_at timestamptz,
   created_at timestamptz default now()
 );
 
@@ -48,7 +50,9 @@ create table submissions (
   status text default 'pending' check (status in ('pending', 'approved', 'rejected')),
   reject_reason text,
   vote_count int default 0,
-  flag_count int default 0
+  flag_count int default 0,
+  attested boolean default false,
+  attested_at timestamptz
 );
 
 create table votes (
@@ -154,13 +158,15 @@ begin
     candidate_username := base_username || '-' || substr(md5(NEW.id::text || suffix::text), 1, 4);
   end loop;
 
-  insert into public.profiles (id, username, display_name, avatar_url, github_handle)
+  insert into public.profiles (id, username, display_name, avatar_url, github_handle, agreed_to_terms, agreed_to_terms_at)
   values (
     NEW.id,
     candidate_username,
     NEW.raw_user_meta_data->>'full_name',
     NEW.raw_user_meta_data->>'avatar_url',
-    NEW.raw_user_meta_data->>'user_name'
+    NEW.raw_user_meta_data->>'user_name',
+    coalesce((NEW.raw_user_meta_data->>'agreed_to_terms')::boolean, false),
+    (NEW.raw_user_meta_data->>'agreed_to_terms_at')::timestamptz
   )
   on conflict (id) do nothing;
 
@@ -195,6 +201,8 @@ create policy "Read approved or own or admin" on submissions for select
 create policy "Own insert" on submissions for insert
   with check (
     auth.uid() = submitter_id and
+    attested = true and
+    attested_at is not null and
     not exists (select 1 from profiles where id = auth.uid() and is_banned = true)
   );
 -- FIX from original spec: admins need update rights to approve/reject.

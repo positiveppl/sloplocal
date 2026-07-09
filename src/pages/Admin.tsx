@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom';
 import { useAuth, useToast } from '../App';
 import { CATS, Slop, banUser, fetchPending, reviewSubmission } from '../lib/data';
 
+function fmtDate(value?: string | null) {
+  if (!value) return 'missing';
+  return new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export default function Admin() {
   const { user } = useAuth();
   const toast = useToast();
@@ -72,6 +77,10 @@ export default function Admin() {
             <span>submitted via {s.submitted_via ?? 'web'}</span>
             <span>by @{s.builder_username}</span>
             <span>flags: {s.flag_count ?? 0}</span>
+          </div>
+          <div className="attestation-meta">
+            <span>Agreed to terms at signup: {s.submitter_agreed_to_terms ? `✅ ${fmtDate(s.submitter_agreed_to_terms_at)}` : '⚠ missing'}</span>
+            <span>Attested at submission: {s.attested ? `✅ ${fmtDate(s.attested_at)}` : '⚠ missing'}</span>
           </div>
           <div className="admin-actions">
             <a className="btn" href={s.url} target="_blank" rel="noopener noreferrer">Open site →</a>

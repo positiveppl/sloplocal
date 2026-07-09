@@ -35,6 +35,10 @@ export interface Slop {
   type?: 'web' | 'desktop' | 'cli' | 'plugin' | 'mobile';
   submitted_via?: 'web' | 'api';
   flag_count?: number;
+  attested?: boolean;
+  attested_at?: string | null;
+  submitter_agreed_to_terms?: boolean;
+  submitter_agreed_to_terms_at?: string | null;
   screenshot_url: string | null;
   vote_count: number;
   status: 'pending' | 'approved' | 'rejected';
@@ -55,6 +59,8 @@ export interface Profile {
   created_at?: string;
   is_banned?: boolean;
   ban_reason?: string | null;
+  agreed_to_terms?: boolean;
+  agreed_to_terms_at?: string | null;
 }
 
 export interface ApiKey {
@@ -243,10 +249,11 @@ export async function toggleVote(submissionId: string, userId: string, currently
 
 export async function submitSlop(input: {
   name: string; url: string; tagline: string; description: string;
-  category_slug: CategorySlug; built_with: string[]; submitter: Profile;
+  category_slug: CategorySlug; built_with: string[]; submitter: Profile; attested: boolean;
 }): Promise<{ ok: boolean; error?: string }> {
   const slug = slugify(input.name);
   if (input.submitter.is_banned) return { ok: false, error: input.submitter.ban_reason || 'This account cannot submit right now.' };
+  if (!input.attested) return { ok: false, error: 'Please confirm you built this before submitting.' };
   const urlCheck = validateSubmissionUrl(input.url);
   if (!urlCheck.valid) return { ok: false, error: urlCheck.reason };
   const normalizedUrl = normalizeUrl(input.url);
@@ -256,6 +263,7 @@ export async function submitSlop(input: {
       id: String(Date.now()), slug, name: input.name, url: normalizedUrl, tagline: input.tagline,
       description: input.description || input.tagline, category_slug: input.category_slug,
       built_with: input.built_with, screenshot_url: null, vote_count: 1, status: 'pending', submitted_via: 'web',
+      attested: true, attested_at: new Date().toISOString(), submitter_agreed_to_terms: true, submitter_agreed_to_terms_at: new Date().toISOString(),
       created_at: new Date().toISOString(), submitter_id: input.submitter.id, builder_username: input.submitter.username,
     });
     return { ok: true };
@@ -267,17 +275,25 @@ export async function submitSlop(input: {
     return { ok: false, error: duplicate.status === 'approved' ? 'This tool is already listed on SLOP LOCAL.' : 'This URL has already been submitted and is pending review.' };
   }
   await recordSubmissionAttempt(input.submitter.id, 'web');
-  const baseInsert = {
+  const legacyInsert = {
     name: input.name, slug, url: normalizedUrl, tagline: input.tagline,
     description: input.description || null, category_slug: input.category_slug,
     built_with: input.built_with, submitter_id: input.submitter.id,
+  };
+  const baseInsert = {
+    ...legacyInsert,
+    attested: true,
+    attested_at: new Date().toISOString(),
   };
   let { error } = await supabase!.from('submissions').insert({
     ...baseInsert,
     normalized_url: normalizedUrl,
     submitted_via: 'web',
   });
-  if (isMissingColumn(error, 'normalized_url') || isMissingColumn(error, 'submitted_via')) {
+  if (isMissingColumn(error, 'attested') || isMissingColumn(error, 'attested_at')) {
+    const fallback = await supabase!.from('submissions').insert(legacyInsert);
+    error = fallback.error;
+  } else if (isMissingColumn(error, 'normalized_url') || isMissingColumn(error, 'submitted_via')) {
     const fallback = await supabase!.from('submissions').insert(baseInsert);
     error = fallback.error;
   }
@@ -294,7 +310,7 @@ export async function fetchPending(): Promise<Slop[]> {
   if (DEMO_MODE) return demoSlops.filter(s => s.status === 'pending');
   const { data, error } = await supabase!
     .from('submissions')
-    .select('*, profiles:submitter_id (username, avatar_url)')
+    .select('*, profiles:submitter_id (username, avatar_url, agreed_to_terms, agreed_to_terms_at)')
     .eq('status', 'pending')
     .order('created_at', { ascending: true });
   if (error) throw error;
@@ -362,17 +378,38 @@ export async function signInEmail(email: string, password: string): Promise<{ ok
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
-export async function signUpEmail(email: string, password: string, username?: string): Promise<{ ok: boolean; error?: string }> {
+export async function signUpEmail(email: string, password: string, username: string | undefined, agreedToTerms: boolean): Promise<{ ok: boolean; error?: string }> {
   if (DEMO_MODE) { demoSignIn(); return { ok: true }; }
+  if (!agreedToTerms) return { ok: false, error: 'Please confirm the submission rules before creating an account.' };
   const cleanUsername = sanitizeUsername(username ?? '');
+  const agreedAt = new Date().toISOString();
   const { error } = await supabase!.auth.signUp({
     email: email.trim(),
     password,
     options: {
       emailRedirectTo: window.location.origin,
-      ...(cleanUsername ? { data: { user_name: cleanUsername, preferred_username: cleanUsername } } : {}),
+      data: {
+        ...(cleanUsername ? { user_name: cleanUsername, preferred_username: cleanUsername } : {}),
+        agreed_to_terms: true,
+        agreed_to_terms_at: agreedAt,
+      },
     },
   });
+  return error ? { ok: false, error: error.message } : { ok: true };
+}
+
+export async function agreeToTerms(userId: string): Promise<{ ok: boolean; error?: string }> {
+  if (DEMO_MODE) {
+    if (demoUser) {
+      demoUser.agreed_to_terms = true;
+      demoUser.agreed_to_terms_at = new Date().toISOString();
+    }
+    return { ok: true };
+  }
+  const { error } = await supabase!
+    .from('profiles')
+    .update({ agreed_to_terms: true, agreed_to_terms_at: new Date().toISOString() })
+    .eq('id', userId);
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
@@ -402,7 +439,7 @@ export async function signOut(): Promise<void> {
 }
 
 function demoSignIn() {
-  demoUser = { id: 'demo-you', username: 'you', display_name: 'Demo You', avatar_url: null, bio: null, is_admin: true };
+  demoUser = { id: 'demo-you', username: 'you', display_name: 'Demo You', avatar_url: null, bio: null, is_admin: true, agreed_to_terms: true, agreed_to_terms_at: new Date().toISOString() };
 }
 
 export function onAuthChange(cb: () => void): () => void {
@@ -581,6 +618,10 @@ function mapRow(row: any): Slop {
     type: row.type ?? 'web',
     submitted_via: row.submitted_via ?? 'web',
     flag_count: row.flag_count ?? 0,
+    attested: row.attested ?? false,
+    attested_at: row.attested_at ?? null,
+    submitter_agreed_to_terms: row.profiles?.agreed_to_terms ?? false,
+    submitter_agreed_to_terms_at: row.profiles?.agreed_to_terms_at ?? null,
     screenshot_url: row.screenshot_url,
     vote_count: row.vote_count ?? 0,
     status: row.status,

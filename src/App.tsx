@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { BrowserRouter, Link, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { DEMO_MODE, getSessionProfile, onAuthChange, Profile, signOut } from './lib/data';
 import Home from './pages/Home';
 import Submit from './pages/Submit';
@@ -10,6 +10,7 @@ import Admin from './pages/Admin';
 import Login from './pages/Login';
 import AgentDocs from './pages/AgentDocs';
 import Start from './pages/Start';
+import Terms from './pages/Terms';
 
 // ============ CONTEXTS ============
 
@@ -188,6 +189,19 @@ function Footer() {
   );
 }
 
+function TermsGate() {
+  const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user || user.agreed_to_terms || location.pathname === '/confirm-terms') return;
+    navigate('/confirm-terms', { replace: true, state: { from: location.pathname } });
+  }, [location.pathname, navigate, user]);
+
+  return null;
+}
+
 // ============ APP ============
 
 export default function App() {
@@ -224,6 +238,7 @@ export default function App() {
           )}
           <Nav />
           <Ticker />
+          <TermsGate />
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/submit" element={<Submit />} />
@@ -234,6 +249,7 @@ export default function App() {
             <Route path="/docs/agent" element={<AgentDocs />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/confirm-terms" element={<Terms />} />
           </Routes>
           <Footer />
           <div className={`toast ${toastVisible ? 'show' : ''}`}>{toastMsg}</div>

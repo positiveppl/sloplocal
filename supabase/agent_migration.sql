@@ -10,6 +10,10 @@ alter table submissions add column if not exists submitted_via text default 'web
 alter table submissions add column if not exists flag_count int default 0;
 alter table profiles add column if not exists is_banned boolean default false;
 alter table profiles add column if not exists ban_reason text;
+alter table profiles add column if not exists agreed_to_terms boolean default false;
+alter table profiles add column if not exists agreed_to_terms_at timestamptz;
+alter table submissions add column if not exists attested boolean default false;
+alter table submissions add column if not exists attested_at timestamptz;
 
 create unique index if not exists submissions_normalized_url_key on submissions (normalized_url);
 
@@ -37,13 +41,15 @@ begin
     candidate_username := base_username || '-' || substr(md5(NEW.id::text || suffix::text), 1, 4);
   end loop;
 
-  insert into public.profiles (id, username, display_name, avatar_url, github_handle)
+  insert into public.profiles (id, username, display_name, avatar_url, github_handle, agreed_to_terms, agreed_to_terms_at)
   values (
     NEW.id,
     candidate_username,
     NEW.raw_user_meta_data->>'full_name',
     NEW.raw_user_meta_data->>'avatar_url',
-    NEW.raw_user_meta_data->>'user_name'
+    NEW.raw_user_meta_data->>'user_name',
+    coalesce((NEW.raw_user_meta_data->>'agreed_to_terms')::boolean, false),
+    (NEW.raw_user_meta_data->>'agreed_to_terms_at')::timestamptz
   )
   on conflict (id) do nothing;
 
@@ -161,6 +167,8 @@ drop policy if exists "Own insert" on submissions;
 create policy "Own insert" on submissions for insert
   with check (
     auth.uid() = submitter_id and
+    attested = true and
+    attested_at is not null and
     not exists (select 1 from profiles where id = auth.uid() and is_banned = true)
   );
 

@@ -14,6 +14,7 @@ export default function Submit() {
   const [description, setDescription] = useState('');
   const [cat, setCat] = useState<'' | CategorySlug>('');
   const [tags, setTags] = useState<Set<string>>(new Set());
+  const [attested, setAttested] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -28,12 +29,16 @@ export default function Submit() {
       setError('Name, URL, one-liner, and category are required.');
       return;
     }
+    if (!attested) {
+      setError('Please confirm you built this before submitting.');
+      return;
+    }
     const projectUrl = normalizeUrlInput(url);
     try { new URL(projectUrl); } catch { setError('That URL doesn\'t parse.'); return; }
     setBusy(true);
     const res = await submitSlop({
       name: name.trim(), url: projectUrl, tagline: tagline.trim(),
-      description: description.trim(), category_slug: cat, built_with: [...tags], submitter: user,
+      description: description.trim(), category_slug: cat, built_with: [...tags], submitter: user, attested,
     });
     setBusy(false);
     if (!res.ok) { setError(res.error ?? 'Something broke. Try again.'); return; }
@@ -99,7 +104,21 @@ export default function Submit() {
         <div className="hint">Screenshot capture happens at review time.</div>
       </div>
 
-      <button className="btn btn-primary" style={{ width: '100%', padding: 14 }} disabled={busy} onClick={handleSubmit}>
+      <div className="attestation-field submission-attestation">
+        <input
+          type="checkbox"
+          id="submission-attestation"
+          required
+          checked={attested}
+          onChange={e => setAttested(e.target.checked)}
+        />
+        <label htmlFor="submission-attestation">
+          I built this or am authorized to submit it. It's free to use and I've put real time into it — not a throwaway demo.
+        </label>
+      </div>
+      {error.includes('confirm') && <div className="attestation-error">⚠ Please confirm before submitting.</div>}
+
+      <button className="btn btn-primary" style={{ width: '100%', padding: 14 }} disabled={busy || !attested} onClick={handleSubmit}>
         {busy ? 'Dropping…' : 'Drop it →'}
       </button>
       <p className="form-note">Submissions are reviewed by a human before they hit the board. Usually within a day. Rejections come with a reason, not a form letter.</p>

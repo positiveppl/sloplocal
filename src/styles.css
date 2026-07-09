@@ -170,6 +170,13 @@ footer { border-top: 2px solid var(--ink); background: var(--paper); padding: 24
 .tag-pick.on { border: 1.5px solid var(--riso-green); color: var(--riso-green); background: var(--riso-green-pale); font-weight: 500; }
 .form-note { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--ink-faint); margin-top: 14px; line-height: 1.6; }
 .form-error { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--riso-orange); border: 1.5px solid var(--riso-orange); background: var(--riso-orange-pale); padding: 12px 14px; margin-bottom: 20px; }
+.attestation-field { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-top: 1px solid var(--border); margin: 8px 0 18px; }
+.attestation-field input[type="checkbox"] { flex-shrink: 0; width: 16px; height: 16px; margin-top: 2px; accent-color: var(--riso-orange); cursor: pointer; }
+.attestation-field label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-mid); letter-spacing: 0.04em; line-height: 1.6; cursor: pointer; }
+.attestation-field label strong { color: var(--ink); font-weight: 500; }
+.attestation-error { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--riso-orange); margin: -10px 0 16px; letter-spacing: 0.04em; }
+.submission-attestation { margin-top: 4px; }
+.oauth-confirm-logo { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--riso-green); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 14px; }
 
 /* ============ TOAST ============ */
 .toast { position: fixed; bottom: max(24px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%) translateY(calc(100% + 48px)); background: var(--ink); color: var(--paper); font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 12px 20px; z-index: 1000; transition: transform 0.25s ease; letter-spacing: 0.04em; max-width: calc(100vw - 32px); }
@@ -274,6 +281,8 @@ footer { border-top: 2px solid var(--ink); background: var(--paper); padding: 24
 .admin-url { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--riso-green); margin-top: 6px; word-break: break-all; }
 .moderation-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .moderation-meta span { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--ink-mid); border: 1px solid var(--border); padding: 4px 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+.attestation-meta { display: grid; gap: 6px; margin-top: 12px; padding: 10px 12px; border: 1px solid var(--border); background: var(--paper-dark); }
+.attestation-meta span { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--ink-mid); letter-spacing: 0.04em; }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width: 640px) {

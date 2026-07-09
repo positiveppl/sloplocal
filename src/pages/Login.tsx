@@ -12,6 +12,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [handle, setHandle] = useState('');
   const [password, setPassword] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -21,9 +22,10 @@ export default function Login() {
     const cleanHandle = sanitizeUsername(handle);
     if (mode === 'up' && !cleanHandle) { setError('Pick a public handle. No email addresses on the board.'); return; }
     if (mode === 'up' && handle.includes('@')) { setError('Use a handle, not an email address.'); return; }
+    if (mode === 'up' && !agreedToTerms) { setError('Please confirm the submission rules before creating an account.'); return; }
     setBusy(true);
     const cleanEmail = email.trim();
-    const res = mode === 'in' ? await signInEmail(cleanEmail, password) : await signUpEmail(cleanEmail, password, cleanHandle);
+    const res = mode === 'in' ? await signInEmail(cleanEmail, password) : await signUpEmail(cleanEmail, password, cleanHandle, agreedToTerms);
     setBusy(false);
     if (!res.ok) { setError(res.error ?? 'That didn\'t work.'); return; }
     await refresh();
@@ -75,7 +77,23 @@ export default function Login() {
         <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
       </div>
 
-      <button className="btn btn-primary" style={{ width: '100%', padding: 13 }} disabled={busy} onClick={handleEmail}>
+      {mode === 'up' && (
+        <div className="attestation-field">
+          <input
+            type="checkbox"
+            id="signup-attestation"
+            required
+            checked={agreedToTerms}
+            onChange={e => setAgreedToTerms(e.target.checked)}
+          />
+          <label htmlFor="signup-attestation">
+            I agree to only submit projects I built or am authorized to represent. <strong>Submitting someone else's work gets your account permanently banned.</strong>
+          </label>
+        </div>
+      )}
+      {mode === 'up' && error.includes('confirm') && <div className="attestation-error">⚠ Please confirm before creating an account.</div>}
+
+      <button className="btn btn-primary" style={{ width: '100%', padding: 13 }} disabled={busy || (mode === 'up' && !agreedToTerms)} onClick={handleEmail}>
         {busy ? 'One sec…' : mode === 'in' ? 'Sign in →' : 'Create account →'}
       </button>
 
@@ -88,7 +106,7 @@ export default function Login() {
       <p className="form-note">
         {mode === 'in' ? 'No account yet? ' : 'Already have one? '}
         <button className="nav-link" style={{ padding: 0, textDecoration: 'underline' }}
-                onClick={() => { setMode(mode === 'in' ? 'up' : 'in'); setError(''); }}>
+                onClick={() => { setMode(mode === 'in' ? 'up' : 'in'); setError(''); setAgreedToTerms(false); }}>
           {mode === 'in' ? 'Sign up' : 'Sign in'}
         </button>
       </p>

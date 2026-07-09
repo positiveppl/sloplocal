@@ -1,11 +1,15 @@
--- SLOP LOCAL signup trigger fix
--- Run this in Supabase SQL Editor if /auth/v1/signup returns 500.
+-- SLOP LOCAL attestation migration
+-- Run this in Supabase SQL Editor before deploying the attestation UI.
 
 alter table public.profiles
   add column if not exists agreed_to_terms boolean default false,
   add column if not exists agreed_to_terms_at timestamptz;
 
-create or replace function handle_new_user()
+alter table public.submissions
+  add column if not exists attested boolean default false,
+  add column if not exists attested_at timestamptz;
+
+create or replace function public.handle_new_user()
 returns trigger as $$
 declare
   base_username text;
@@ -29,7 +33,15 @@ begin
     candidate_username := base_username || '-' || substr(md5(NEW.id::text || suffix::text), 1, 4);
   end loop;
 
-  insert into public.profiles (id, username, display_name, avatar_url, github_handle, agreed_to_terms, agreed_to_terms_at)
+  insert into public.profiles (
+    id,
+    username,
+    display_name,
+    avatar_url,
+    github_handle,
+    agreed_to_terms,
+    agreed_to_terms_at
+  )
   values (
     NEW.id,
     candidate_username,
@@ -45,7 +57,11 @@ begin
 end;
 $$ language plpgsql security definer set search_path = public, auth;
 
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-after insert on auth.users
-for each row execute function handle_new_user();
+drop policy if exists "Own insert" on public.submissions;
+create policy "Own insert" on public.submissions for insert
+  with check (
+    auth.uid() = submitter_id and
+    attested = true and
+    attested_at is not null and
+    not exists (select 1 from public.profiles where id = auth.uid() and is_banned = true)
+  );

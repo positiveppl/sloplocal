@@ -106,7 +106,7 @@ export async function onRequestPost({ request, env }: Context) {
     }
 
     await recordSubmissionAttempt(env, apiUser.userId, 'api');
-    const baseInsert = {
+    const legacyInsert = {
       submitter_id: apiUser.userId,
       name,
       slug,
@@ -116,6 +116,11 @@ export async function onRequestPost({ request, env }: Context) {
       category_slug: category,
       built_with: builtWith,
       status: 'pending',
+    };
+    const baseInsert = {
+      ...legacyInsert,
+      attested: true,
+      attested_at: new Date().toISOString(),
     };
     let { data, error } = await supabase
       .from('submissions')
@@ -128,7 +133,15 @@ export async function onRequestPost({ request, env }: Context) {
       .select('id, status')
       .single();
 
-    if (isMissingColumn(error, 'normalized_url') || isMissingColumn(error, 'submitted_via') || isMissingColumn(error, 'type')) {
+    if (isMissingColumn(error, 'attested') || isMissingColumn(error, 'attested_at')) {
+      const fallback = await supabase
+        .from('submissions')
+        .insert(legacyInsert)
+        .select('id, status')
+        .single();
+      data = fallback.data;
+      error = fallback.error;
+    } else if (isMissingColumn(error, 'normalized_url') || isMissingColumn(error, 'submitted_via') || isMissingColumn(error, 'type')) {
       const fallback = await supabase
         .from('submissions')
         .insert(baseInsert)
@@ -146,7 +159,8 @@ export async function onRequestPost({ request, env }: Context) {
     return jsonWithRateLimit({
       id: data.id,
       status: data.status,
-      message: 'Submission received. Pending review before going live.',
+      message: 'Submission received. By submitting via API key you confirm you built this or are authorized to represent it.',
+      attested: true,
     }, { ...limit, remaining: Math.max(0, limit.remaining - 1) }, { status: 201 });
   } catch (error: any) {
     return json({ error: error.message ?? 'Unable to create submission.' }, { status: 500 });

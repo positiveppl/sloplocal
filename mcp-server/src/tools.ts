@@ -124,7 +124,7 @@ async function submitSlop(args: Record<string, any>) {
   const data = await res.json().catch(() => ({}));
   if (res.status === 429) return text(`Rate limit reached: ${data.error} The builder can submit more tomorrow.`);
   if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-  return text(`Submitted! "${args.name}" is pending review. ID: ${data.id}`);
+  return text(`Submitted! "${args.name}" is pending review. ID: ${data.id}\n${data.message ?? ''}`.trim());
 }
 
 async function getTrending(args: Record<string, any>) {
