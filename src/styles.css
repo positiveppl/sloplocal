@@ -224,6 +224,11 @@ footer { border-top: 2px solid var(--ink); background: var(--paper); padding: 24
 .prompt-list blockquote { border-left: 3px solid var(--riso-orange); background: var(--riso-orange-pale); color: var(--ink-mid); padding: 10px 12px; font-size: 14px; line-height: 1.5; }
 .tool-list { display: grid; grid-template-columns: max-content 1fr; gap: 8px 18px; align-items: baseline; }
 .tool-list code { color: var(--riso-green); }
+.start-page section { position: relative; padding: 22px 0 22px 46px; border-top: 1px solid var(--border); }
+.start-page h2 { font-size: 18px; text-transform: uppercase; margin-bottom: 8px; }
+.start-page p { font-size: 14px; line-height: 1.6; color: var(--ink-mid); margin-bottom: 16px; }
+.start-step { position: absolute; top: 22px; left: 0; width: 28px; height: 28px; display: grid; place-items: center; border: 1.5px solid var(--ink); background: var(--paper-dark); font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--riso-orange); }
+.start-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 
 /* ============ MANIFESTO ============ */
 .manifesto-wrap { max-width: 600px; margin: 0 auto; padding: 56px 20px; }

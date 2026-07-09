@@ -9,6 +9,7 @@ import Manifesto from './pages/Manifesto';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 import AgentDocs from './pages/AgentDocs';
+import Start from './pages/Start';
 
 // ============ CONTEXTS ============
 
@@ -100,7 +101,7 @@ function Nav() {
           </div>
         </Link>
         <div className="nav-right">
-          <Link to="/docs/agent" className="nav-link">New Builder?</Link>
+          <Link to="/start" className="nav-link">New Builder?</Link>
           {user ? (
             <div className="user-menu" ref={userMenuRef}>
               <button className="user-menu-trigger" onClick={() => setUserMenuOpen(open => !open)} aria-expanded={userMenuOpen}>
@@ -131,7 +132,7 @@ function Nav() {
         <div className="mobile-menu" ref={menuRef}>
           <Link to="/submit" className="mobile-menu-item primary" onClick={closeMenus}>Drop your slop ↗</Link>
           <div className="mobile-menu-divider" />
-          <Link to="/docs/agent" className="mobile-menu-item" onClick={closeMenus}>New Builder?</Link>
+          <Link to="/start" className="mobile-menu-item" onClick={closeMenus}>New Builder?</Link>
           <Link to="/manifesto" className="mobile-menu-item" onClick={closeMenus}>Manifesto</Link>
           <Link to="/docs/agent" className="mobile-menu-item" onClick={closeMenus}>Agent Access</Link>
           <div className="mobile-menu-divider" />
@@ -161,8 +162,8 @@ function Footer() {
             <div className="footer-tagline">Built local. Shipped fast. Not sorry.</div>
           </div>
           <div className="footer-new-builder">
-            <Link to="/docs/agent" className="footer-new-builder-label">New Builder?</Link>
-            <Link to="/docs/agent" className="footer-new-builder-sub">From Prompt to Product →</Link>
+            <Link to="/start" className="footer-new-builder-label">New Builder?</Link>
+            <Link to="/start" className="footer-new-builder-sub">From Prompt to Product →</Link>
           </div>
         </div>
 
@@ -229,6 +230,7 @@ export default function App() {
             <Route path="/slop/:slug" element={<Detail />} />
             <Route path="/profile/:username" element={<ProfilePage />} />
             <Route path="/manifesto" element={<Manifesto />} />
+            <Route path="/start" element={<Start />} />
             <Route path="/docs/agent" element={<AgentDocs />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/login" element={<Login />} />
