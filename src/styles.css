@@ -109,6 +109,8 @@ nav { border-bottom: 2px solid var(--ink); background: var(--paper); position: s
 .board-head span { font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-faint); }
 .row { display: grid; grid-template-columns: 36px 60px 1fr 120px 80px 110px; gap: 14px; align-items: center; padding: 16px 12px; margin: 0 -12px; border-bottom: 1px solid var(--border); cursor: pointer; }
 .row:hover { background: var(--paper-dark); }
+.related-row { grid-template-columns: 140px 1fr 80px; }
+.related-row .thumb { width: 140px; height: 88px; }
 .rank { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--ink-faint); }
 .rank.top { color: var(--riso-orange); font-weight: 500; }
 .thumb { width: 60px; height: 40px; background: var(--paper-dark); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; overflow: hidden; }
@@ -307,6 +309,26 @@ footer { border-top: 2px solid var(--ink); background: var(--paper); padding: 24
   .phase-nav { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .phase-panel { padding: 20px; box-shadow: 3px 3px 0 var(--ink); }
   .tool-grid { grid-template-columns: 1fr; }
+  .related-row {
+    grid-template-columns: minmax(138px, 42%) 1fr;
+    grid-template-areas: "thumb info" "vote info";
+    align-items: start;
+    column-gap: 18px;
+    padding: 18px 0;
+    margin: 0;
+  }
+  .related-row .thumb {
+    grid-area: thumb;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+  }
+  .related-row .app-info { grid-area: info; }
+  .related-row .vote-btn {
+    grid-area: vote;
+    width: 100%;
+    margin-top: 8px;
+  }
 }
 @media (min-width: 861px) {
   .row-meta { display: contents; }

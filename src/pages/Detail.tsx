@@ -115,7 +115,7 @@ export default function Detail() {
         <>
           <div className="more-head">More from @{slop.builder_username}</div>
           {more.map(m => (
-            <div key={m.id} className="row" style={{ gridTemplateColumns: '60px 1fr 80px' }} onClick={() => navigate(`/slop/${m.slug}`)}>
+            <div key={m.id} className="row related-row" onClick={() => navigate(`/slop/${m.slug}`)}>
               <div className="thumb">{m.screenshot_url ? <img src={m.screenshot_url} alt="" /> : '🥕'}</div>
               <div className="app-info">
                 <div className="app-name">{m.name}</div>
