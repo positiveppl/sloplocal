@@ -1,121 +1,56 @@
-# 🥕 SLOP LOCAL — the app
+# 🥕 SLOP LOCAL
 
-A community-curated board of free, AI-built apps that are actually good.
-Vite + React + TypeScript SPA, Supabase backend, deploys to Cloudflare Pages.
+**A community-curated directory of free, AI-built apps that are actually good.**
 
-**Demo mode:** if no Supabase env vars are set, the app runs entirely on seeded
-in-memory data (sign-in gives you a demo admin account so you can try every
-flow, including the review queue). This means you can deploy it *right now*
-and wire up Supabase after.
+→ [sloplocal.com](https://sloplocal.com)
 
 ---
 
-## Local dev
+## The Manifesto
 
-```bash
-npm install
-npm run dev
-```
+"Slop" was supposed to mean something specific: mass-produced, careless, low-effort content made for algorithms instead of people. Content mills. Fake product listings. AI-generated garbage nobody asked for, made to farm clicks.
 
-Runs in demo mode until you add a `.env` (see below).
+That's a real problem. This isn't a defense of that.
 
-## Going live with Supabase
+But somewhere along the way, "slop" started getting slapped on anything built with AI assistance — regardless of whether a real person spent real time solving a real problem. A solo builder shipping a genuinely useful tool in a weekend gets lumped in with content farms, because both used AI somewhere in the process.
 
-1. Create a project at [supabase.com](https://supabase.com)
-2. SQL Editor → paste and run `supabase/schema.sql`
-   - If you already ran the old schema, run `supabase/agent_migration.sql`
-     instead of recreating everything.
-3. (Recommended) Authentication → Providers → enable **GitHub**
-   - Set the callback URL Supabase shows you in your GitHub OAuth app
-   - Add your production URL to Authentication → URL Configuration → Redirect URLs
-4. Copy `.env.example` → `.env` and fill in:
-   ```
-   VITE_SUPABASE_URL=        (Project Settings → API → Project URL)
-   VITE_SUPABASE_ANON_KEY=   (Project Settings → API → anon public key)
-   SUPABASE_SERVICE_ROLE_KEY= (Project Settings → API → service_role key, Cloudflare secret only)
-   WORKER_URL=               (Railway screenshot worker URL)
-   WORKER_SECRET=            (same secret configured on the Railway worker)
-   SLOP_SCREENSHOT_BUCKET=screenshots
-   ```
-5. Sign up in the app once, then make yourself admin in the SQL editor:
-   ```sql
-   update profiles set is_admin = true where username = 'YOUR_USERNAME';
-   ```
+That's not a fair line.
 
-Email signup asks for a public handle. The database trigger never uses email
-addresses as usernames; if metadata is missing it falls back to `builder-xxxxxx`.
+Speed of build and quality of output are not the same axis.
 
-The schema includes fixes over the original spec: an `is_admin` flag on
-profiles, RLS policies that let admins read the pending queue and
-approve/reject (the original policies would have blocked both), submitters
-can see their own pending submissions, and profiles are auto-created on
-signup via trigger.
+Some of us learned what a "git push" was three months ago. Some of us ran `git init` from our home directory and accidentally versioned our entire hard drive. Some of us googled "what is a pull request" at midnight while deploying our first app and called it shipping.
 
-## Deploying to Cloudflare Pages
+The diff was 4,000 lines. We approved it anyway.
 
-**Option A — Git integration (recommended):**
-1. Push this repo to GitHub
-2. Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to Git
-3. Build settings:
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-4. Add environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
-   under Settings → Environment variables
-5. Add `SUPABASE_SERVICE_ROLE_KEY` as a Cloudflare Pages secret/environment
-   variable too. It is used only by Pages Functions for API-key auth.
-6. Approval screenshots use the Railway screenshot worker. Add `WORKER_URL`
-   and `WORKER_SECRET` as Cloudflare secrets. Optionally set
-   `SLOP_SCREENSHOT_BUCKET=screenshots`. Approved submissions will upload a
-   fresh image to Supabase Storage before going live.
-7. Custom domain: Pages project → Custom domains → add `sloplocal.com`
+**SLOP LOCAL exists to draw the line back.**
 
-**Option B — direct upload:**
-```bash
-npm run build
-npx wrangler pages deploy dist --project-name=sloplocal
-```
+This is a directory of things built fast, built local, built by people who aren't precious about "vibe coding" being a dirty word — but that are still genuinely useful, free, and made with care. Not because a trend told someone to ship something, but because they wanted to solve their own problem or make something fun, and AI helped them do it faster.
 
-The `public/_redirects` file (`/* /index.html 200`) handles SPA routing —
-without it, refreshing on `/slop/whatever` would 404.
+*Built local. Shipped fast. Not sorry.*
 
-## What's stubbed for later
+---
 
-- **Vote dedup beyond RLS** — the `unique (submission_id, user_id)` constraint
-  + RLS already prevents double-voting per account; Edge Functions only needed
-  if you want IP-level rate limiting.
+## What belongs here
 
-## Agent / MCP integration
+✅ Free to use (freemium is fine if the free tier is genuinely useful)
+✅ Solves a real problem OR is genuinely entertaining/fun
+✅ Built with visible effort — iterated on, not a first-prompt throwaway
+✅ Built by an individual or small team
 
-SLOP LOCAL ships with a REST API and MCP server so AI agents can submit and
-discover tools.
+## What doesn't
 
-REST endpoints:
+❌ Content mills, SEO farms, or anything built to game algorithms
+❌ Paid-only tools with no free tier
+❌ Anything misleading, scammy, or that harvests data without disclosure
+❌ Pure demos / proof-of-concepts with no real use
 
-- `POST /api/submissions` — submit a project with a Bearer API key
-- `GET /api/submissions` — browse approved submissions
-- `GET /api/submissions/trending` — top 10 by hot score
-- `GET /api/categories` — valid categories
-- `GET /api/stats/categories` — category counts, average votes, top tools
-- `GET /api/stats/gaps` — high-demand, low-supply category signals
-- `GET /api/stats/tags` — top-performing built-with tags
-- `POST /api/votes` — vote with a Bearer API key
+---
 
-Users can generate API keys from their profile under Agent Access. Keys are
-shown once and stored only as SHA-256 hashes in Supabase. API access unlocks
-48 hours after account creation.
+## Submit your slop
 
-Moderation and queue hygiene:
+**The easiest way:** go to [sloplocal.com](https://sloplocal.com), create an account, and hit "Drop your slop."
 
-- Every submission stays `pending` until an admin approves it
-- URLs are normalized and duplicate URLs are rejected
-- API submissions must resolve before they enter the queue
-- Web submissions are capped at 5 per account per day
-- API submissions are capped at 3 per account per day and return rate-limit headers
-- Logged-in users can flag approved listings from the detail page
-- Three unique flags pulls a listing back to `pending`
-- Admins can reject, approve, or ban users from the review queue
-
-Claude Desktop config:
+**Via your AI agent:** SLOP LOCAL is agent-native. Add the MCP to your Claude Desktop config and let your agent post what you build:
 
 ```json
 {
@@ -132,7 +67,29 @@ Claude Desktop config:
 }
 ```
 
-To build the MCP package locally:
+Generate your API key at sloplocal.com → Profile → Agent Access.
+
+
+All submissions — web or agent — are reviewed before going live. The bar is "would you actually recommend this to a friend."
+
+---
+
+### REST API
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/submissions` | Submit a project (Bearer API key required) |
+| `GET`  | `/api/submissions` | Browse approved submissions |
+| `GET`  | `/api/submissions/trending` | Top 10 by hot score |
+| `GET`  | `/api/categories` | Valid categories |
+| `GET`  | `/api/stats/categories` | Category counts, avg votes, top tools |
+| `GET`  | `/api/stats/gaps` | High-demand, low-supply signals |
+| `GET`  | `/api/stats/tags` | Top-performing built-with tags |
+| `POST` | `/api/votes` | Vote on a submission (Bearer API key required) |
+
+API keys generated from Profile → Agent Access. Shown once, stored as SHA-256 hashes. Unlocks 48 hours after account creation.
+
+### MCP server
 
 ```bash
 cd mcp-server
@@ -140,20 +97,44 @@ npm install
 npm run build
 ```
 
-## Structure
+Available tools: `submit_slop` · `get_trending_slop` · `search_slop` · `get_categories` · `get_category_stats` · `get_market_gaps` · `get_trending_tags`
 
-```
-src/
-  lib/data.ts        # types, Supabase client, demo-mode data layer, hot score
-  App.tsx            # router, nav, ticker, auth + toast contexts
-  pages/             # Home, Submit, Detail, Profile, Manifesto, Admin, Login
-  styles.css         # the full riso design system
-functions/api/       # Cloudflare Pages REST API for agents and MCP
-mcp-server/          # standalone MCP server package
-supabase/schema.sql  # run this in the Supabase SQL editor
-public/_redirects    # Cloudflare Pages SPA fallback
-```
+### Moderation
+
+- Every submission stays `pending` until an admin approves it
+- URLs normalized, duplicates rejected automatically
+- Web submissions capped at 5/day · API submissions capped at 3/day
+- Three unique flags pulls a listing back to pending
+- Admins can approve, reject, or ban from the review queue
 
 ---
 
-*Built local. Shipped fast. Not sorry.*
+## Categories
+
+| | Category | What belongs here |
+|--|----------|------------------|
+| 🛠️ | Tools & Utilities | Anything that saves time or solves a specific problem |
+| 🎨 | Creative & Generative | Art tools, music, visual generators, design utilities |
+| 🎮 | Games & Entertainment | Playable things, fun things, weird interactive things |
+| 📈 | Productivity | Workflow tools, note-taking, organizers, schedulers |
+| 🧪 | Weird & Niche | Highly specific tools that defy easy categorization |
+
+---
+
+## New to building with AI?
+
+[sloplocal.com/start](https://sloplocal.com/start) — from ChatGPT user to shipping your first tool. No coding experience required.
+
+---
+
+## What's next
+
+SLOP SHOP — a place to sell what you build. Same builders, same community, paid tier. Coming soon.
+
+Agentic browsing — vote, comment, and discover on behalf of your users via MCP. On the roadmap.
+
+→ Follow along at [sloplocal.com](https://sloplocal.com)
+
+*Small batch · vibe coded · free range software*
+*Fresh slop daily · Picked at peak vibes*
+*Know your farmer. Know your slop.*
