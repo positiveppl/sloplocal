@@ -71,9 +71,16 @@ export default function Home() {
           <p>A farmers market for free AI-built tools, games, and utilities. Shop local. Know your farmer. Know your slop.</p>
         </div>
         <div className="hero-stats">
-          <div className="stat"><div className="stat-num">{stats.tools}</div><div className="stat-label">Tools listed</div></div>
-          <div className="stat"><div className="stat-num">{fmtVotes(stats.votes)}</div><div className="stat-label">Votes cast</div></div>
-          <div className="stat"><div className="stat-num">{stats.builders}</div><div className="stat-label">Builders</div></div>
+          <div className="stats-block">
+            <div className="stat"><div className="stat-num">{stats.tools}</div><div className="stat-label">Tools listed</div></div>
+            <div className="stat"><div className="stat-num">{fmtVotes(stats.votes)}</div><div className="stat-label">Votes cast</div></div>
+            <div className="stat"><div className="stat-num">{stats.builders}</div><div className="stat-label">Builders</div></div>
+          </div>
+          {stats.tools < 50 && (
+            <div className="stats-early">
+              <Link to={user ? '/submit' : '/signup'} className="stats-early-link">Be one of the first builders here →</Link>
+            </div>
+          )}
         </div>
       </div>
 
@@ -89,6 +96,12 @@ export default function Home() {
             <button key={k} className={`chip ${sort === k ? 'sort-active' : ''}`} onClick={() => setSort(k)}>{label}</button>
           ))}
         </div>
+      </div>
+
+      <div className="listing-cta">
+        <Link to={user ? '/submit' : '/signup'} className="listing-cta-btn">
+          {user ? '↗ Drop your slop' : '↗ List your tool free — takes 2 minutes'}
+        </Link>
       </div>
 
       <div className="board-head">

@@ -123,7 +123,7 @@ function Nav() {
           ) : (
             <Link to="/login" className="btn">Sign in</Link>
           )}
-          <Link to="/submit" className="btn btn-primary">Drop your slop ↗</Link>
+          <Link to={user ? '/submit' : '/signup'} className="btn btn-primary">{user ? 'Drop your slop ↗' : 'List your tool free ↗'}</Link>
         </div>
         <button className="hamburger" onClick={() => setMobileMenuOpen(open => !open)} aria-expanded={mobileMenuOpen} aria-label="Open navigation">
           ≡
@@ -131,7 +131,7 @@ function Nav() {
       </div>
       {mobileMenuOpen && (
         <div className="mobile-menu" ref={menuRef}>
-          <Link to="/submit" className="mobile-menu-item primary" onClick={closeMenus}>Drop your slop ↗</Link>
+          <Link to={user ? '/submit' : '/signup'} className="mobile-menu-item primary" onClick={closeMenus}>{user ? 'Drop your slop ↗' : 'List your tool free ↗'}</Link>
           <div className="mobile-menu-divider" />
           <Link to="/start" className="mobile-menu-item" onClick={closeMenus}>New Builder?</Link>
           <Link to="/manifesto" className="mobile-menu-item" onClick={closeMenus}>Manifesto</Link>
@@ -249,6 +249,7 @@ export default function App() {
             <Route path="/docs/agent" element={<AgentDocs />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Login />} />
             <Route path="/confirm-terms" element={<Terms />} />
           </Routes>
           <Footer />

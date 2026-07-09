@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth, useToast } from '../App';
 import { DEMO_MODE, sanitizeUsername, sendMagicLink, signInEmail, signInGitHub, signUpEmail } from '../lib/data';
 
@@ -7,8 +7,9 @@ export default function Login() {
   const { refresh } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [mode, setMode] = useState<'in' | 'up'>('in');
+  const [mode, setMode] = useState<'in' | 'up'>(() => location.pathname === '/signup' ? 'up' : 'in');
   const [email, setEmail] = useState('');
   const [handle, setHandle] = useState('');
   const [password, setPassword] = useState('');
