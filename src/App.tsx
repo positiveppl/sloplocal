@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import AgentDocs from './pages/AgentDocs';
 import Start from './pages/Start';
 import Terms from './pages/Terms';
+import { ScrollToTop } from './components/ScrollToTop';
 
 // ============ CONTEXTS ============
 
@@ -229,6 +230,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthContext.Provider value={{ user, refresh }}>
         <ToastContext.Provider value={toast}>
           {DEMO_MODE && (
