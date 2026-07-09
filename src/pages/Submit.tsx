@@ -65,7 +65,7 @@ export default function Submit() {
 
       <div className="field">
         <label>Project name <span className="req">*</span></label>
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="CHOPPL" />
+        <input value={name} onChange={e => setName(e.target.value)} placeholder="PosterLab" />
       </div>
       <div className="field">
         <label>URL <span className="req">*</span></label>
