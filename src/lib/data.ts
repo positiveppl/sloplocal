@@ -486,13 +486,21 @@ export async function flagSubmission(submissionId: string, userId: string, reaso
 }
 
 export function normalizeUrl(rawUrl: string): string {
-  const u = new URL(rawUrl);
+  const u = new URL(normalizeUrlInput(rawUrl));
   return `${u.protocol}//${u.hostname}${u.pathname}`.replace(/\/$/, '').toLowerCase();
+}
+
+export function normalizeUrlInput(rawUrl: string): string {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return trimmed;
+  if (/^[a-z][a-z\d+\-.]*:\/\//i.test(trimmed)) return trimmed;
+  if (/^[\w.-]+\.[a-z]{2,}(?::\d+)?(?:[/?#].*)?$/i.test(trimmed)) return `https://${trimmed}`;
+  return trimmed;
 }
 
 export function validateSubmissionUrl(rawUrl: string): { valid: boolean; reason?: string } {
   let parsed: URL;
-  try { parsed = new URL(rawUrl); } catch { return { valid: false, reason: 'Invalid URL format.' }; }
+  try { parsed = new URL(normalizeUrlInput(rawUrl)); } catch { return { valid: false, reason: 'Invalid URL format.' }; }
   if (!['http:', 'https:'].includes(parsed.protocol)) return { valid: false, reason: 'Only http and https URLs are allowed.' };
   const host = parsed.hostname.toLowerCase();
   const blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0'];

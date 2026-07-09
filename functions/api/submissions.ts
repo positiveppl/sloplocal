@@ -72,7 +72,7 @@ export async function onRequestPost({ request, env }: Context) {
     if (!validType(type)) return json({ error: 'Invalid type.' }, { status: 400 });
     const urlCheck = validateSubmissionUrl(projectUrl);
     if (!urlCheck.valid || !urlCheck.normalizedUrl) return json({ error: urlCheck.reason ?? 'Invalid URL.' }, { status: 400 });
-    const resolveCheck = await assertUrlResolves(projectUrl);
+    const resolveCheck = await assertUrlResolves(urlCheck.normalizedUrl);
     if (!resolveCheck.valid) return json({ error: resolveCheck.reason }, { status: 400 });
 
     const slugBase = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');

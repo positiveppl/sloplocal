@@ -120,20 +120,29 @@ export async function validateApiKeyProfile(request: Request, env: Env): Promise
 }
 
 export function normalizeUrl(rawUrl: string): string {
-  const u = new URL(rawUrl);
+  const u = new URL(normalizeUrlInput(rawUrl));
   return `${u.protocol}//${u.hostname}${u.pathname}`.replace(/\/$/, '').toLowerCase();
+}
+
+export function normalizeUrlInput(rawUrl: string): string {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return trimmed;
+  if (/^[a-z][a-z\d+\-.]*:\/\//i.test(trimmed)) return trimmed;
+  if (/^[\w.-]+\.[a-z]{2,}(?::\d+)?(?:[/?#].*)?$/i.test(trimmed)) return `https://${trimmed}`;
+  return trimmed;
 }
 
 export function validateSubmissionUrl(rawUrl: string): { valid: boolean; reason?: string; normalizedUrl?: string } {
   let parsed: URL;
-  try { parsed = new URL(rawUrl); } catch { return { valid: false, reason: 'Invalid URL format.' }; }
+  const normalizedInput = normalizeUrlInput(rawUrl);
+  try { parsed = new URL(normalizedInput); } catch { return { valid: false, reason: 'Invalid URL format.' }; }
   if (!['http:', 'https:'].includes(parsed.protocol)) return { valid: false, reason: 'Only http and https URLs are allowed.' };
   const host = parsed.hostname.toLowerCase();
   if (['localhost', '127.0.0.1', '0.0.0.0'].includes(host) || host.endsWith('.local') || host.startsWith('10.') || host.startsWith('192.168.')) {
     return { valid: false, reason: 'Local or private URLs are not allowed.' };
   }
   if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(host)) return { valid: false, reason: 'Local or private URLs are not allowed.' };
-  return { valid: true, normalizedUrl: normalizeUrl(rawUrl) };
+  return { valid: true, normalizedUrl: normalizeUrl(normalizedInput) };
 }
 
 export async function assertUrlResolves(rawUrl: string): Promise<{ valid: boolean; reason?: string }> {

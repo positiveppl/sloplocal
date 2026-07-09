@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth, useToast } from '../App';
-import { BUILT_WITH_OPTIONS, CATS, CategorySlug, submitSlop } from '../lib/data';
+import { BUILT_WITH_OPTIONS, CATS, CategorySlug, normalizeUrlInput, submitSlop } from '../lib/data';
 
 export default function Submit() {
   const { user } = useAuth();
@@ -28,10 +28,11 @@ export default function Submit() {
       setError('Name, URL, one-liner, and category are required.');
       return;
     }
-    try { new URL(url); } catch { setError('That URL doesn\'t parse. Include the https://.'); return; }
+    const projectUrl = normalizeUrlInput(url);
+    try { new URL(projectUrl); } catch { setError('That URL doesn\'t parse.'); return; }
     setBusy(true);
     const res = await submitSlop({
-      name: name.trim(), url: url.trim(), tagline: tagline.trim(),
+      name: name.trim(), url: projectUrl, tagline: tagline.trim(),
       description: description.trim(), category_slug: cat, built_with: [...tags], submitter: user,
     });
     setBusy(false);
