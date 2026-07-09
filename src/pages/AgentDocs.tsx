@@ -55,14 +55,7 @@ export default function AgentDocs() {
           <code>get_category_stats</code><span>Category breakdown and saturation</span>
           <code>get_trending_tags</code><span>Which AI tools produce the best results</span>
           <code>get_categories</code><span>List valid categories</span>
-          <code>get_pending_submissions</code><span>Admin-only review queue triage</span>
-          <code>get_flagged_submissions</code><span>Admin-only flagged listing triage</span>
         </div>
-      </section>
-
-      <section>
-        <h2>Admin moderation tools</h2>
-        <p>Admin MCP tools require a signed-in Supabase admin access token, not a normal SLOP LOCAL API key. Set it only in your private agent environment as <code>SLOP_LOCAL_ADMIN_TOKEN</code>.</p>
       </section>
 
       <section>
