@@ -14,6 +14,8 @@ export default function Submit() {
   const [description, setDescription] = useState('');
   const [cat, setCat] = useState<'' | CategorySlug>('');
   const [tags, setTags] = useState<Set<string>>(new Set());
+  const [accessModel, setAccessModel] = useState('free');
+  const [apiProvider, setApiProvider] = useState('');
   const [attested, setAttested] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -33,12 +35,24 @@ export default function Submit() {
       setError('Please confirm you built this before submitting.');
       return;
     }
+    if (accessModel === 'byok' && !apiProvider.trim()) {
+      setError('Pick which AI API key the project requires.');
+      return;
+    }
     const projectUrl = normalizeUrlInput(url);
     try { new URL(projectUrl); } catch { setError('That URL doesn\'t parse.'); return; }
+    const submissionTags = [...tags];
+    if (accessModel === 'byok') {
+      submissionTags.push('BYOK', `${apiProvider.trim()} API key required`);
+    } else if (accessModel === 'account') {
+      submissionTags.push('Free account required');
+    } else if (accessModel === 'freemium') {
+      submissionTags.push('Freemium');
+    }
     setBusy(true);
     const res = await submitSlop({
       name: name.trim(), url: projectUrl, tagline: tagline.trim(),
-      description: description.trim(), category_slug: cat, built_with: [...tags], submitter: user, attested,
+      description: description.trim(), category_slug: cat, built_with: submissionTags, submitter: user, attested,
     });
     setBusy(false);
     if (!res.ok) { setError(res.error ?? 'Something broke. Try again.'); return; }
@@ -53,7 +67,7 @@ export default function Submit() {
       <p className="page-sub">Free, useful, made by you. That's the whole bar.</p>
 
       <div className="criteria">
-        <div>✅ Free to use (a genuinely useful free tier counts)</div>
+        <div>✅ Free to use, useful freemium, or BYOK if clearly labeled</div>
         <div>✅ Solves a real problem, raises a real issue, or serves a specific community</div>
         <div>✅ Built with visible effort — iterated, not a first-prompt throwaway</div>
         <div>✅ Indie / small-team energy</div>
@@ -98,6 +112,29 @@ export default function Submit() {
           ))}
         </div>
       </div>
+      <div className="field">
+        <label>Access model <span className="req">*</span></label>
+        <select value={accessModel} onChange={e => setAccessModel(e.target.value)}>
+          <option value="free">Free, no account/API key needed</option>
+          <option value="account">Free account required</option>
+          <option value="freemium">Freemium with useful free tier</option>
+          <option value="byok">Bring your own AI API key</option>
+        </select>
+        <div className="hint">BYOK is allowed, but it must be obvious before someone clicks through.</div>
+      </div>
+      {accessModel === 'byok' && (
+        <div className="field">
+          <label>Required API key <span className="req">*</span></label>
+          <select value={apiProvider} onChange={e => setApiProvider(e.target.value)}>
+            <option value="">Pick one</option>
+            <option value="Claude">Claude</option>
+            <option value="OpenAI">OpenAI</option>
+            <option value="Gemini">Gemini</option>
+            <option value="Other AI">Other AI</option>
+          </select>
+          <div className="hint">This appears as a listing tag, for example: BYOK · Claude API key required.</div>
+        </div>
+      )}
       <div className="field">
         <label>Screenshot</label>
         <input disabled placeholder="Auto-captured from your URL on approval" />

@@ -641,6 +641,10 @@ export function fmtVotes(n: number): string {
 }
 
 export function fmtBuiltWithTag(value: string): string {
+  if (value === 'BYOK') return 'BYOK';
+  if (value === 'Freemium') return 'Freemium';
+  if (value === 'Free account required') return 'Free account required';
+  if (value.endsWith('API key required')) return value;
   return `Non-GMO · built with ${value}`;
 }
 

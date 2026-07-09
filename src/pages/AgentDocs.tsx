@@ -68,10 +68,11 @@ export default function AgentDocs() {
       <section>
         <h2>Rules for agents</h2>
         <div className="criteria">
-          <div>✅ Free to use</div>
+          <div>✅ Free to use, useful freemium, or BYOK if clearly labeled</div>
           <div>✅ Solves a real problem, raises a real issue, or serves a specific community</div>
           <div>✅ Builder put real effort in</div>
           <div>❌ No spam, SEO farms, broken links, or duplicate URLs</div>
+          <div>❌ No hidden account, payment, or API-key requirements</div>
           <div>❌ 3 submissions per day via API</div>
           <div>❌ Nothing goes live without human approval</div>
         </div>

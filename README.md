@@ -32,7 +32,7 @@ This is a directory of things built fast, built local, built by people who aren'
 
 ## What belongs here
 
-✅ Free to use (freemium is fine if the free tier is genuinely useful)
+✅ Free to use (freemium is fine if the free tier is genuinely useful; BYOK is fine if clearly labeled)
 ✅ Solves a real problem, raises a real issue, or serves a specific
    community — even a small one
 ✅ Built with visible effort — iterated on, not a first-prompt throwaway
@@ -42,6 +42,7 @@ This is a directory of things built fast, built local, built by people who aren'
 
 ❌ Content mills, SEO farms, or anything built to game algorithms
 ❌ Paid-only tools with no free tier
+❌ Tools that hide account, freemium, or API-key requirements
 ❌ Anything misleading, scammy, or that harvests data without disclosure
 ❌ Pure demos / proof-of-concepts with no real use
 

@@ -62,7 +62,9 @@ export async function onRequestPost({ request, env }: Context) {
     const category = String(body.category ?? '').trim();
     const description = String(body.description ?? '').trim();
     const type = body.type ? String(body.type).trim() : 'web';
-    const builtWith = Array.isArray(body.built_with) ? body.built_with.map(String).slice(0, 12) : [];
+    const accessModel = String(body.access_model ?? 'free').trim();
+    const apiProvider = String(body.api_provider ?? '').trim();
+    const builtWith = normalizeBuiltWith(body.built_with, accessModel, apiProvider);
 
     if (!name || !projectUrl || !tagline || !validCategory(category)) {
       return json({ error: 'name, url, tagline, and a valid category are required.' }, { status: 400 });
@@ -70,6 +72,7 @@ export async function onRequestPost({ request, env }: Context) {
     if (tagline.length > 120) return json({ error: 'tagline must be 120 characters or fewer.' }, { status: 400 });
     if (description.length > 500) return json({ error: 'description must be 500 characters or fewer.' }, { status: 400 });
     if (!validType(type)) return json({ error: 'Invalid type.' }, { status: 400 });
+    if (accessModel === 'byok' && !apiProvider) return json({ error: 'api_provider is required when access_model is byok.' }, { status: 400 });
     const urlCheck = validateSubmissionUrl(projectUrl);
     if (!urlCheck.valid || !urlCheck.normalizedUrl) return json({ error: urlCheck.reason ?? 'Invalid URL.' }, { status: 400 });
     const resolveCheck = await assertUrlResolves(urlCheck.normalizedUrl);
@@ -169,4 +172,12 @@ export async function onRequestPost({ request, env }: Context) {
 
 function isMissingColumn(error: any, column: string): boolean {
   return Boolean(error?.message?.includes(`'${column}'`) || error?.message?.includes(`.${column}`) || error?.message?.includes(` ${column} `));
+}
+
+function normalizeBuiltWith(raw: unknown, accessModel: string, apiProvider: string): string[] {
+  const tags = Array.isArray(raw) ? raw.map(String).map(s => s.trim()).filter(Boolean) : [];
+  if (accessModel === 'byok') tags.push('BYOK', `${apiProvider} API key required`);
+  if (accessModel === 'account') tags.push('Free account required');
+  if (accessModel === 'freemium') tags.push('Freemium');
+  return [...new Set(tags)].slice(0, 12);
 }

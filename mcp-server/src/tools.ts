@@ -20,6 +20,8 @@ export const tools: Tool[] = [
         category: { type: 'string', enum: categoryEnum },
         type: { type: 'string', enum: typeEnum },
         built_with: { type: 'array', items: { type: 'string' }, description: 'AI tools or tags used: Codex, Claude, Cursor, v0, Replit, Lovable, Bolt, GPT-4, civic, local, hyperlocal, community, etc' },
+        access_model: { type: 'string', enum: ['free', 'account', 'freemium', 'byok'], description: 'How people access it. Use byok if users must bring their own AI API key.' },
+        api_provider: { type: 'string', description: 'Required when access_model is byok, e.g. Claude, OpenAI, Gemini, Other AI.' },
         description: { type: 'string', description: 'Optional longer description, max 500 chars' },
         builder_handle: { type: 'string', description: 'Your @handle to credit on the listing' }
       },

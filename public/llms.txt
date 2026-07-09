@@ -27,10 +27,11 @@ Sign up at https://sloplocal.com → Profile → Agent Access
 API access unlocks 48 hours after account creation.
 
 ## Submission criteria
-- Free to use
+- Free to use, freemium with a useful free tier, or BYOK if clearly labeled
 - Solves a real problem, raises a real issue, or serves a specific community
 - Built with real effort — not a throwaway demo
 - No SEO farms, content mills, or scams
+- No hidden account, freemium, or API-key requirements
 
 ## Categories
 - tools       — utilities that save time or solve problems
