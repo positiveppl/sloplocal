@@ -28,7 +28,7 @@ export default function Admin() {
   async function review(s: Slop, status: 'approved' | 'rejected') {
     let reason: string | undefined;
     if (status === 'rejected') {
-      reason = window.prompt('Reason for rejection (the builder will see this):') ?? undefined;
+      reason = window.prompt('Reason for rejection (the grower will see this):') ?? undefined;
       if (reason === undefined) return; // cancelled
     }
     setReviewingId(s.id);
@@ -69,13 +69,13 @@ export default function Admin() {
           <div className="app-name">{s.name}</div>
           <div className="app-tagline">{s.tagline}</div>
           <a className="admin-url" href={s.url} target="_blank" rel="noopener noreferrer">{s.url}</a>
-          {s.description && <div className="app-tagline" style={{ marginTop: 8 }}>{s.description}</div>}
+          {s.description && <div className="app-tagline" style={{ marginTop: 8 }}><strong>Recipe:</strong> {s.description}</div>}
           <div className="admin-meta">
             {CATS[s.category_slug]?.label ?? s.category_slug} · {s.built_with.join(', ') || 'no tags'}
           </div>
           <div className="moderation-meta">
             <span>submitted via {s.submitted_via ?? 'web'}</span>
-            <span>by @{s.builder_username}</span>
+            <span>grown by @{s.builder_username}</span>
             <span>flags: {s.flag_count ?? 0}</span>
           </div>
           <div className="attestation-meta">

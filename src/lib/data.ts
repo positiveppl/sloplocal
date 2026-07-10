@@ -645,12 +645,12 @@ export function fmtBuiltWithTag(value: string): string {
   if (value === 'Freemium') return 'Freemium';
   if (value === 'Free account required') return 'Free account required';
   if (value.endsWith('API key required')) return value;
-  return `Non-GMO · built with ${value}`;
+  return `Ingredient · ${value}`;
 }
 
 export function fmtBuiltWithTags(values: string[]): string[] {
   if (values.length <= 1) return values.map(fmtBuiltWithTag);
-  return [`Non-GMO · built with ${values.join(' + ')}`];
+  return [`Ingredients · ${values.join(' + ')}`];
 }
 
 function randomToken(): string {

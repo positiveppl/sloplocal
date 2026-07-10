@@ -1,6 +1,6 @@
 # 🥕 SLOP LOCAL
 
-**A community-curated directory of free, AI-built apps that are actually good.**
+**A community-curated directory of open, accessible AI-built apps that are actually good.**
 
 → [sloplocal.com](https://sloplocal.com)
 
@@ -32,10 +32,10 @@ This is a directory of things built fast, built local, built by people who aren'
 
 ## What belongs here
 
-✅ Free to use (freemium is fine if the free tier is genuinely useful; BYOK is fine if clearly labeled)
+✅ Open & accessible — free, useful freemium, open-source, or clearly labeled BYOK
 ✅ Solves a real problem, raises a real issue, or serves a specific
    community — even a small one
-✅ Built with visible effort — iterated on, not a first-prompt throwaway
+✅ Includes a human recipe / proof of craft — iterated on, not a first-prompt throwaway
 ✅ Built by an individual or small team
 
 ## What doesn't

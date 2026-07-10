@@ -61,9 +61,9 @@ export default function AgentDocs() {
       <section>
         <h2>Rules for agents</h2>
         <div className="criteria">
-          <div>✅ Free to use, useful freemium, or BYOK if clearly labeled</div>
+          <div>✅ Open & accessible — free, useful freemium, open-source, or clearly labeled BYOK</div>
           <div>✅ Solves a real problem, raises a real issue, or serves a specific community</div>
-          <div>✅ Builder put real effort in</div>
+          <div>✅ Grower includes a real recipe / proof of craft</div>
           <div>❌ No spam, SEO farms, broken links, or duplicate URLs</div>
           <div>❌ No hidden account, payment, or API-key requirements</div>
           <div>❌ 3 submissions per day via API</div>

@@ -85,11 +85,16 @@ export default function Detail() {
       <div className="detail-tagline">{slop.tagline}</div>
       <div className="detail-meta">
         <span className="cat-tag">{CATS[slop.category_slug]?.full ?? slop.category_slug}</span>
-        <span className="builder">by <Link className="handle" to={`/profile/${slop.builder_username}`}>@{slop.builder_username}</Link></span>
+        <span className="builder">grown by <Link className="handle" to={`/profile/${slop.builder_username}`}>@{slop.builder_username}</Link></span>
         <span className="built-with">{fmtBuiltWithTags(slop.built_with).map(tag => <span key={tag} className="bw-tag">{tag}</span>)}</span>
         <a className="btn" style={{ marginLeft: 'auto' }} href={slop.url} target="_blank" rel="noopener noreferrer">Visit site →</a>
       </div>
-      {slop.description && <div className="detail-desc">{slop.description}</div>}
+      {slop.description && (
+        <section className="recipe-card">
+          <div className="section-kicker">Recipe from the grower</div>
+          <div className="detail-desc">{slop.description}</div>
+        </section>
+      )}
 
       <div className="flag-box">
         {!flagOpen ? (
@@ -113,7 +118,7 @@ export default function Detail() {
 
       {more.length > 0 && (
         <>
-          <div className="more-head">More from @{slop.builder_username}</div>
+          <div className="more-head">More from this grower</div>
           {more.map(m => (
             <div key={m.id} className="row related-row" onClick={() => navigate(`/slop/${m.slug}`)}>
               <div className="thumb">{m.screenshot_url ? <img src={m.screenshot_url} alt="" /> : '🥕'}</div>

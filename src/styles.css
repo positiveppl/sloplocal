@@ -201,6 +201,8 @@ footer { border-top: 2px solid var(--ink); background: var(--paper); padding: 24
 .detail-tagline { font-size: 17px; color: var(--ink-mid); margin: 12px 0 20px; line-height: 1.5; }
 .detail-meta { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; padding: 16px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-bottom: 24px; }
 .detail-desc { font-size: 15px; line-height: 1.65; color: var(--ink-mid); margin-bottom: 32px; white-space: pre-wrap; }
+.recipe-card { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 18px 0 4px; margin-bottom: 28px; }
+.recipe-card .detail-desc { margin-bottom: 12px; }
 .more-head { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ink-faint); margin-bottom: 12px; }
 .flag-box { border-top: 1px solid var(--border); padding: 18px 0 28px; margin-bottom: 18px; }
 .flag-toggle { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-faint); background: none; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.08em; }

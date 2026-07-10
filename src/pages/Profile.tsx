@@ -58,7 +58,7 @@ export default function ProfilePage() {
   }, [profile]);
 
   if (profile === undefined) return <div className="loading">Loading…</div>;
-  if (profile === null) return <div className="empty">No builder by that handle.</div>;
+  if (profile === null) return <div className="empty">No grower by that handle.</div>;
 
   const score = slops.reduce((s, a) => s + a.vote_count, 0);
   const isOwnProfile = Boolean(user && user.username === profile.username);

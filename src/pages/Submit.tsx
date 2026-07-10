@@ -27,8 +27,8 @@ export default function Submit() {
   async function handleSubmit() {
     setError('');
     if (!user) { toast('Sign in first, then drop it.'); navigate('/login'); return; }
-    if (!name.trim() || !url.trim() || !tagline.trim() || !cat) {
-      setError('Name, URL, one-liner, and category are required.');
+    if (!name.trim() || !url.trim() || !tagline.trim() || !cat || !description.trim()) {
+      setError('Name, URL, one-liner, category, and recipe are required.');
       return;
     }
     if (!attested) {
@@ -64,15 +64,15 @@ export default function Submit() {
     <div className="narrow-wrap">
       <Link to="/" className="back-link">← Back to the board</Link>
       <h1 className="page-title">Drop your slop</h1>
-      <p className="page-sub">Free, useful, made by you. That's the whole bar.</p>
+      <p className="page-sub">Open, accessible, useful, made by you. That's the whole bar.</p>
 
       <div className="criteria">
-        <div>✅ Free to use, useful freemium, or BYOK if clearly labeled</div>
+        <div>✅ Open & accessible — free, useful freemium, open-source, or clearly labeled BYOK</div>
         <div>✅ Solves a real problem, raises a real issue, or serves a specific community</div>
-        <div>✅ Built with visible effort — iterated, not a first-prompt throwaway</div>
+        <div>✅ Includes a real recipe — what you designed, what AI helped with, and what was hard</div>
         <div>✅ Indie / small-team energy</div>
         <div>❌ No demos with no real use, content farms, SEO bait, or scams</div>
-        <div>❌ No paid-only tools</div>
+        <div>❌ No hidden payment, account, or API-key requirements</div>
       </div>
 
       {error && <div className="form-error">{error}</div>}
@@ -91,8 +91,8 @@ export default function Submit() {
         <div className="hint">{120 - tagline.length} left</div>
       </div>
       <div className="field">
-        <label>Description</label>
-        <textarea value={description} maxLength={500} rows={4} onChange={e => setDescription(e.target.value)} placeholder="What it does, why you built it, what makes it good. (optional, 500 max)" />
+        <label>Recipe / proof of craft <span className="req">*</span></label>
+        <textarea value={description} maxLength={500} rows={5} onChange={e => setDescription(e.target.value)} placeholder="What did you design? What did AI help with? What was hard to get right? Keep it human. 500 max." />
         <div className="hint">{500 - description.length} left</div>
       </div>
       <div className="field">
@@ -105,7 +105,7 @@ export default function Submit() {
         </select>
       </div>
       <div className="field">
-        <label>Built with</label>
+        <label>Ingredients</label>
         <div className="tag-picker">
           {BUILT_WITH_OPTIONS.map(t => (
             <button key={t} className={`tag-pick ${tags.has(t) ? 'on' : ''}`} onClick={() => toggleTag(t)}>{t}</button>
@@ -150,7 +150,7 @@ export default function Submit() {
           onChange={e => setAttested(e.target.checked)}
         />
         <label htmlFor="submission-attestation">
-          I built this or am authorized to submit it. It's free to use and I've put real time into it — not a throwaway demo.
+          I built this or am authorized to submit it. It's open and accessible, and I've put real time into it — not a throwaway demo.
         </label>
       </div>
       {error.includes('confirm') && <div className="attestation-error">⚠ Please confirm before submitting.</div>}

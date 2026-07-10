@@ -10,7 +10,7 @@ const typeEnum = ['web', 'desktop', 'cli', 'plugin', 'mobile'];
 export const tools: Tool[] = [
   {
     name: 'submit_slop',
-    description: 'Submit a vibe-coded app or tool to SLOP LOCAL for community discovery. Use this after building something free that solves a real problem, raises a civic issue, or serves a specific community — even a small or hyperlocal one. Submissions are reviewed before going live.',
+    description: 'Submit a vibe-coded app or tool to SLOP LOCAL for community discovery. Use this after building something open and accessible that solves a real problem, raises a civic issue, or serves a specific community — even a small or hyperlocal one. Include a human recipe/proof of craft. Submissions are reviewed before going live.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -19,13 +19,13 @@ export const tools: Tool[] = [
         tagline: { type: 'string', description: 'One-line description, max 120 chars' },
         category: { type: 'string', enum: categoryEnum },
         type: { type: 'string', enum: typeEnum },
-        built_with: { type: 'array', items: { type: 'string' }, description: 'AI tools or tags used: Codex, Claude, Cursor, v0, Replit, Lovable, Bolt, GPT-4, civic, local, hyperlocal, community, etc' },
+        built_with: { type: 'array', items: { type: 'string' }, description: 'Ingredients: AI tools, frameworks, stacks, or tags used: Codex, Claude, Cursor, React, Supabase, civic, local, hyperlocal, community, etc' },
         access_model: { type: 'string', enum: ['free', 'account', 'freemium', 'byok'], description: 'How people access it. Use byok if users must bring their own AI API key.' },
         api_provider: { type: 'string', description: 'Required when access_model is byok, e.g. Claude, OpenAI, Gemini, Other AI.' },
-        description: { type: 'string', description: 'Optional longer description, max 500 chars' },
+        description: { type: 'string', description: 'Required recipe/proof of craft, max 500 chars: what the human designed, what AI helped with, and what was hard to get right.' },
         builder_handle: { type: 'string', description: 'Your @handle to credit on the listing' }
       },
-      required: ['name', 'url', 'tagline', 'category']
+      required: ['name', 'url', 'tagline', 'category', 'description']
     }
   },
   {
@@ -152,7 +152,7 @@ async function submitSlop(args: Record<string, any>) {
     body: JSON.stringify(args),
   });
   const data = await res.json().catch(() => ({}));
-  if (res.status === 429) return text(`Rate limit reached: ${data.error} The builder can submit more tomorrow.`);
+  if (res.status === 429) return text(`Rate limit reached: ${data.error} The grower can submit more tomorrow.`);
   if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
   return text(`Submitted! "${args.name}" is pending review. ID: ${data.id}\n${data.message ?? ''}`.trim());
 }
@@ -235,10 +235,10 @@ async function getAdminSubmissions(path: string, args: Record<string, any>, titl
 
     return [
       `${i + 1}. ${s.name} (${s.status}) — ${s.url}`,
-      `   Builder: @${s.builder_username} · ${s.submitted_via ?? 'web'} · ${accountability}`,
-      `   Category: ${s.category_slug} · Built with: ${(s.built_with ?? []).join(', ') || 'none'}`,
+      `   Grower: @${s.builder_username} · ${s.submitted_via ?? 'web'} · ${accountability}`,
+      `   Category: ${s.category_slug} · Ingredients: ${(s.built_with ?? []).join(', ') || 'none'}`,
       `   Tagline: ${s.tagline}`,
-      s.description ? `   Description: ${s.description}` : '',
+      s.description ? `   Recipe: ${s.description}` : '',
       `   ID: ${s.id}`,
     ].filter(Boolean).join('\n');
   }).join('\n\n');

@@ -74,11 +74,11 @@ export default function Home() {
           <div className="stats-block">
             <div className="stat"><div className="stat-num">{stats.tools}</div><div className="stat-label">Tools listed</div></div>
             <div className="stat"><div className="stat-num">{fmtVotes(stats.votes)}</div><div className="stat-label">Votes cast</div></div>
-            <div className="stat"><div className="stat-num">{stats.builders}</div><div className="stat-label">Builders</div></div>
+          <div className="stat"><div className="stat-num">{stats.builders}</div><div className="stat-label">Growers</div></div>
           </div>
           {stats.tools < 50 && (
             <div className="stats-early">
-              <Link to={user ? '/submit' : '/signup'} className="stats-early-link">Be one of the first builders here →</Link>
+              <Link to={user ? '/submit' : '/signup'} className="stats-early-link">Be one of the first growers here →</Link>
             </div>
           )}
         </div>
@@ -105,7 +105,7 @@ export default function Home() {
       </div>
 
       <div className="board-head">
-        <span>#</span><span></span><span>The slop report</span><span>Category</span><span>Votes</span><span>Builder</span>
+        <span>#</span><span></span><span>The slop report</span><span>Category</span><span>Votes</span><span>Grower</span>
       </div>
 
       {!list && <div className="loading">Loading the board…</div>}
@@ -128,7 +128,7 @@ export default function Home() {
               ▲ {fmtVotes(s.vote_count)}
             </button>
             <div className="builder">
-              by <Link className="handle" to={`/profile/${s.builder_username}`} onClick={e => e.stopPropagation()}>@{s.builder_username}</Link>
+              by grower <Link className="handle" to={`/profile/${s.builder_username}`} onClick={e => e.stopPropagation()}>@{s.builder_username}</Link>
             </div>
           </div>
         </div>

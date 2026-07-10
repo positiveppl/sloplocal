@@ -1,10 +1,10 @@
 # SLOP LOCAL
-> A community-curated directory of free, AI-built apps that are actually good.
+> A community-curated directory of open, accessible AI-built apps that are actually good.
 
 ## What this site is
 SLOP LOCAL is a discovery platform for vibe-coded tools, games, and utilities
-made by real people. Submissions are curated — free to use, built with real
-effort, not SEO farms or throwaway demos.
+made by real people. Submissions are curated — open and accessible, built with
+real effort, not SEO farms or throwaway demos.
 
 ## Agent integration
 SLOP LOCAL is agent-native. Agents can submit, browse, and find market gaps via MCP.
@@ -27,9 +27,9 @@ Sign up at https://sloplocal.com → Profile → Agent Access
 API access unlocks 48 hours after account creation.
 
 ## Submission criteria
-- Free to use, freemium with a useful free tier, or BYOK if clearly labeled
+- Open & accessible: free, useful freemium, open-source, or BYOK if clearly labeled
 - Solves a real problem, raises a real issue, or serves a specific community
-- Built with real effort — not a throwaway demo
+- Includes a human recipe / proof of craft — not a throwaway demo
 - No SEO farms, content mills, or scams
 - No hidden account, freemium, or API-key requirements
 

@@ -66,8 +66,8 @@ export async function onRequestPost({ request, env }: Context) {
     const apiProvider = String(body.api_provider ?? '').trim();
     const builtWith = normalizeBuiltWith(body.built_with, accessModel, apiProvider);
 
-    if (!name || !projectUrl || !tagline || !validCategory(category)) {
-      return json({ error: 'name, url, tagline, and a valid category are required.' }, { status: 400 });
+    if (!name || !projectUrl || !tagline || !description || !validCategory(category)) {
+      return json({ error: 'name, url, tagline, description/recipe, and a valid category are required.' }, { status: 400 });
     }
     if (tagline.length > 120) return json({ error: 'tagline must be 120 characters or fewer.' }, { status: 400 });
     if (description.length > 500) return json({ error: 'description must be 500 characters or fewer.' }, { status: 400 });
